@@ -1,0 +1,147 @@
+{
+  "theme": "dark",
+  "archetype": "4 (Swiss & High-Contrast)",
+  "emotional_tone": "Authority, Precision, Advanced Technology, Enterprise Trust",
+  "typography": {
+    "strategy": "Swiss Brutalist (Tech / Corporate)",
+    "font_families": {
+      "headings": "Cabinet Grotesk, Outfit, or Chivo (fallback: sans-serif)",
+      "body": "Satoshi, Inter, or IBM Plex Sans (fallback: sans-serif)",
+      "mono": "JetBrains Mono (fallback: monospace)"
+    },
+    "hierarchy_rules": [
+      "H1 (Hero): text-5xl sm:text-6xl+ (tracking-tighter, leading-none)",
+      "H2 (Section): text-3xl sm:text-4xl (tracking-tight)",
+      "H3 (Subsection): text-2xl (tracking-tight)",
+      "Body: text-base leading-relaxed text-zinc-400",
+      "Labels/Overlines: text-xs uppercase tracking-[0.2em] text-zinc-500"
+    ],
+    "anti_patterns": [
+      "No generic 'Inter' for headings.",
+      "Do not use text-7xl or above for headings.",
+      "Never center text by default; use explicit alignment."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "background_base": "#050505",
+      "surface_card": "#0A0A0A",
+      "surface_glass": "rgba(10, 10, 10, 0.6)",
+      "border_default": "#1A1A1A",
+      "border_hover": "#333333",
+      "text_primary": "#FFFFFF",
+      "text_secondary": "#A1A1AA",
+      "text_muted": "#52525B",
+      "accent_primary": "#002FA7",
+      "accent_hover": "#003BD1",
+      "accent_alert": "#E53935",
+      "accent_warning": "#FFCC00"
+    },
+    "rules": [
+      "Color is Function Only: 95% of the UI must be monochrome (shades of deep grey to stark white).",
+      "Use Accent Primary (#002FA7) strictly for primary actions, active states, and structural highlights.",
+      "Never use pure #000000; base is #050505 (Tinted deep void).",
+      "No full-screen gradients. Use solid dark backgrounds."
+    ]
+  },
+  "layout_and_spacing": {
+    "strategy": "Bento Grid (TETRIS mode for Marketing, CONTROL ROOM for Dashboards)",
+    "spacing_scale": [
+      "Generous padding: Use p-8, p-12, p-16, p-24 for sections.",
+      "Tight internal gap: gap-4 to gap-8 for bento children."
+    ],
+    "alignment": [
+      "Mobile-First: Always start with grid-cols-1.",
+      "Asymmetry: Use grid-cols-1 md:grid-cols-12, varying column spans (col-span-4 vs col-span-8)."
+    ],
+    "surface_styles": {
+      "cards": "Grid Borders (Technical Look) - border-collapse style layout, sharp edges, 1px subtle borders (border-zinc-800).",
+      "headers": "Crystal Glass - backdrop-blur-xl bg-black/60, 1px bottom border-white/10.",
+      "buttons": "Sharp corners or minimal radius (rounded-md), high-contrast text."
+    }
+  },
+  "motion_and_interactions": {
+    "rules": [
+      "Animations must be purposeful, minimal, and highly responsive.",
+      "Hover states: Subtle lifts (-translate-y-1), border color changes, text color brightens.",
+      "Focus states: High contrast ring (focus:ring-2 focus:ring-blue-500).",
+      "Entry animations: Fast staggered fades for bento grid children (using Framer Motion)."
+    ]
+  },
+  "components_instructions": {
+    "strategy": "Hybrid Approach: Pure HTML/Tailwind for marketing structures, Shadcn for interactive logic.",
+    "buttons": "Solid stark white with black text for primary (or Accent Blue with white text). Minimal radius.",
+    "cards": "Flat background, 1px subtle border, no shadow. Hover: border darkens, slight lift.",
+    "forms": "Shadcn components heavily customized to dark mode. Dark inputs, stark white text, sharp focus rings.",
+    "navigation": "Sticky glass header (z-50). Visible links on desktop, hamburger strictly on mobile."
+  },
+  "visual_enhancers": {
+    "textures": "Grain/Noise overlays on dark backgrounds to remove digital flatness.",
+    "marquee": "The 'Editorial Ribbon' - Low contrast dark ribbons with uppercase monospaced text, moving very slowly.",
+    "hero_overlay": "Gradient overlay from black/70 via black/40 to transparent to ensure text contrast over hero visuals."
+  },
+  "media": {
+    "hero_images": [
+      {
+        "url": "https://images.pexels.com/photos/37730212/pexels-photo-37730212.jpeg",
+        "description": "Server racks highlighting modern technology infrastructure. Use for Orchestra IQ or Home Hero.",
+        "category": "hero_background"
+      },
+      {
+        "url": "https://images.pexels.com/photos/1181320/pexels-photo-1181320.jpeg",
+        "description": "Woman in server room. Use for Careers or Team page.",
+        "category": "team_culture"
+      }
+    ],
+    "logos": [
+      {
+        "url": "https://images.unsplash.com/photo-1496200186974-4293800e2c20",
+        "description": "Slack logo - use in partner/client logo bento grid.",
+        "category": "partner_logo"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9",
+        "description": "Mercedes Benz emblem - use in enterprise client showcase.",
+        "category": "partner_logo"
+      },
+      {
+        "url": "https://images.pexels.com/photos/21898300/pexels-photo-21898300.jpeg",
+        "description": "Pexels logo - use in trusted network section.",
+        "category": "partner_logo"
+      }
+    ],
+    "team_photos": [
+      {
+        "url": "https://images.pexels.com/photos/8124232/pexels-photo-8124232.jpeg",
+        "description": "Business team. Use in About Us.",
+        "category": "team_portrait"
+      },
+      {
+        "url": "https://images.pexels.com/photos/20752572/pexels-photo-20752572.jpeg",
+        "description": "Business consulting. Use for Expert Network.",
+        "category": "expert_network"
+      }
+    ],
+    "rules": [
+      "NEVER use placeholder images.",
+      "If more logos/images are needed, creatively repurpose these or use high-quality Lucide icons to represent concepts."
+    ]
+  },
+  "testing": {
+    "rules": [
+      "All interactive elements MUST have data-testid attributes.",
+      "Use kebab-case, role-based naming (e.g., data-testid='hero-cta-button', data-testid='nav-link-products')."
+    ]
+  },
+  "instructions_to_main_agent": [
+    "1. Setup fonts: Use next/font or @fontsource to install Cabinet Grotesk, Satoshi, and JetBrains Mono. If unavailable, use Outfit (headings), Inter (body), and Roboto Mono.",
+    "2. Setup Lucide-React for all icons. Avoid standard generic SVGs.",
+    "3. Scaffold the exact pages requested: Home, About Us, Products Hub, Orchestra IQ, Arjun AI, Blog, Contact, Careers, Expert Network.",
+    "4. Component Architecture: Create reusable Layout grids (Bento), but avoid over-componentizing marketing structures. Use Shadcn strictly for Forms, Modals, Menus, Accordions.",
+    "5. Supabase/Forms: Setup mock/UI state for forms (Contact, Lead, Newsletter, Expert Network). Ensure error/success states are styled in dark mode.",
+    "6. Adhere strictly to the Dark Mode Swiss Brutalist aesthetic. Do not introduce stray colors. Maintain high contrast.",
+    "7. Implement Framer Motion for scroll-triggered reveal animations in bento grids.",
+    "8. Ensure the header is sticky and mobile responsive.",
+    "9. Add data-testid to every clickable item, form input, and key informational card."
+  ]
+}
