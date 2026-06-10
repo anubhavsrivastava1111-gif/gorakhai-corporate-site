@@ -1,114 +1,182 @@
 # Gorakhai Corporate Site — PRD
 
 ## Original Problem Statement
-Build Phase 1 of Gorakhai corporate website with dedicated Supabase project (gorakhai-corporate), Cloudflare Pages deployment, Admin CMS, SEO optimization, and milestone-based implementation. Completely independent from Orchestra IQ/Admin projects.
+Build Phase 1 + Phase 2 (Admin CMS) of Gorakhai corporate website with dedicated Supabase project (gorakhai-corporate), FastAPI backend + MongoDB, Cloudflare Pages deployment, full Admin CMS with roles, audit logging, and milestone-based implementation.
 
 ## Architecture
 - **Frontend**: React 19 + Tailwind CSS + shadcn/radix UI + Framer Motion + react-helmet-async
-- **Database**: Supabase PostgreSQL (gorakhai-corporate project) — dedicated, isolated
-- **Hosting**: Cloudflare Pages (static SPA build)
-- **Source Control**: GitHub (`gorakhai-corporate-site`)
-- **CI/CD**: GitHub Actions → `.github/workflows/deploy.yml`
+- **Backend**: FastAPI + MongoDB (Motor async) — modular routes
+- **Database**: MongoDB (gorakhai_cms) for all CMS data; Supabase optional for public-facing pages
+- **Auth**: JWT cookie-based (access_token + refresh_token) using bcrypt + PyJWT
+- **Hosting**: Cloudflare Pages (static SPA) + Backend on server
 
 ## Repository Structure
 ```
-gorakhai-corporate-site/
-├── .github/workflows/deploy.yml      CI/CD
-├── docs/
-│   ├── SUPABASE_SETUP.md             Full Supabase setup guide
-│   ├── CLOUDFLARE_DEPLOY.md          Cloudflare deployment guide
-│   └── ADMIN_GUIDE.md                Admin CMS guide
+/app/
+├── backend/
+│   ├── server.py             Main app, startup seeding, indexes
+│   ├── db.py                 MongoDB connection
+│   ├── auth.py               JWT utilities, password hashing, get_current_user
+│   └── routes/
+│       ├── auth_routes.py    POST /api/auth/login|logout|me|refresh
+│       ├── admin_routes.py   All admin CRUD + audit logging
+│       └── public_routes.py  Public blog/careers/forms
 ├── frontend/
 │   ├── public/
-│   │   ├── _redirects                SPA routing for Cloudflare
+│   │   ├── _redirects
 │   │   ├── robots.txt
-│   │   └── sitemap.xml               Static sitemap (12 pages + blog/careers)
+│   │   └── sitemap.xml
 │   └── src/
-│       ├── admin/                    Admin CMS (Milestone 2)
+│       ├── admin/
+│       │   ├── AdminLayout.jsx         Sidebar + top bar
+│       │   ├── ProtectedRoute.jsx      Route guard
+│       │   ├── context/AuthContext.jsx Auth state
+│       │   └── pages/
+│       │       ├── Login.jsx
+│       │       ├── Dashboard.jsx
+│       │       ├── BlogList.jsx + BlogEditor.jsx
+│       │       ├── CareersList.jsx + CareersEditor.jsx
+│       │       ├── Leads.jsx
+│       │       ├── Newsletter.jsx
+│       │       ├── Experts.jsx
+│       │       ├── Waitlist.jsx
+│       │       ├── ActivityLogs.jsx
+│       │       ├── AdminUsers.jsx
+│       │       └── ComingSoon.jsx
 │       ├── components/
 │       │   ├── layout/ (Header, Footer, Layout)
 │       │   ├── sections/ (NewsletterForm)
-│       │   ├── seo/ (SEOMeta — react-helmet-async)
+│       │   ├── seo/ (SEOMeta)
 │       │   └── ui/ (shadcn)
-│       ├── constants/ (mockData, testIds)
-│       ├── hooks/ (useBlogPosts, useJobListings, useFormSubmit)
-│       ├── lib/ (supabaseClient)
-│       └── pages/ (12 routes)
+│       ├── hooks/
+│       │   ├── useBlogPosts.js     → backend API + mock fallback
+│       │   ├── useJobListings.js   → backend API + mock fallback
+│       │   └── useFormSubmit.js    → supabaseClient.submitForm
+│       └── lib/
+│           ├── api.js              Axios client (withCredentials)
+│           └── supabaseClient.js   Form routing to backend API
 └── supabase/
     ├── migrations/
-    │   ├── 001_initial_schema.sql    All 9 tables + indexes
-    │   └── 002_rls_policies.sql      Row Level Security policies
     └── seed/
-        └── seed_data.sql             Development seed data
 ```
 
-## Database Schema (9 Tables)
-| Table | Purpose | RLS |
-|-------|---------|-----|
-| `blog_categories` | Blog taxonomies | Public read |
-| `blog_posts` | Blog articles | Public read (published only) |
-| `contact_submissions` | Contact/demo requests | Public insert |
-| `newsletter_subscribers` | Newsletter list | Public insert |
-| `lead_captures` | Product leads | Public insert |
-| `job_listings` | Open positions | Public read (open only) |
-| `job_applications` | Job applications | Public insert |
-| `expert_network_registrations` | Expert applications | Public insert |
-| `waitlist_subscribers` | Product waitlist | Public insert |
+## Database Schema (MongoDB — gorakhai_cms)
+| Collection | Purpose |
+|---|---|
+| `admin_users` | CMS admin accounts with roles |
+| `blog_posts` | Blog articles (CRUD via admin) |
+| `job_listings` | Career postings (CRUD via admin) |
+| `contact_submissions` | Leads from contact form |
+| `newsletter_subscribers` | Newsletter signups |
+| `expert_network_registrations` | Expert applications |
+| `waitlist_subscribers` | Product waitlist |
+| `job_applications` | Job applications |
+| `activity_logs` | User action tracking |
+| `audit_logs` | Content change audit trail |
+| `login_attempts` | Brute force protection |
+
+## Admin Roles
+- **super_admin**: Full access to all features
+- **content_admin**: Blog + Careers management
+- **community_admin**: Leads + Newsletter + Waitlist management
+- **expert_network_admin**: Expert Network management
 
 ## Implemented — Milestone 1 (Feb 2026)
-
 ### ✅ Pages (12 routes)
 - Home, About, Products, Orchestra IQ, Arjun AI
 - Blog + BlogPost, Contact, Careers + CareerDetail
-- Expert Network, Waitlist (new)
+- Expert Network, Waitlist
 
 ### ✅ SEO
-- react-helmet-async for meta tags
-- OpenGraph + Twitter Card on all pages
-- JSON-LD structured data (Organization, Website, BlogPosting, JobPosting)
-- sitemap.xml (static, 25 URLs)
-- robots.txt (blocks /admin)
+- react-helmet-async, OpenGraph, Twitter Card, JSON-LD
+- sitemap.xml (25 URLs), robots.txt (blocks /admin)
 
 ### ✅ Database
-- 001_initial_schema.sql — complete schema with 9 tables, indexes, triggers
-- 002_rls_policies.sql — full RLS policy setup
-- seed_data.sql — dev seed data
+- 001_initial_schema.sql + 002_rls_policies.sql (Supabase)
+- seed_data.sql
 
 ### ✅ Documentation
-- SUPABASE_SETUP.md — step-by-step Supabase setup
-- CLOUDFLARE_DEPLOY.md — full deployment guide
-- ADMIN_GUIDE.md — Admin CMS usage guide
+- SUPABASE_SETUP.md, CLOUDFLARE_DEPLOY.md, ADMIN_GUIDE.md
 
-### ✅ Foundation
-- useBlogPosts, useJobListings, useFormSubmit hooks
-- react-helmet-async installed + configured
-- Updated .env.example
-- GitHub Actions CI/CD (`.github/workflows/deploy.yml`)
+## Implemented — Milestone 2 (Admin CMS — Feb 2026)
 
-## Next — Milestone 2 (Admin CMS)
-### Pending User Approval
+### ✅ Backend Auth (JWT Cookie-based)
+- POST /api/auth/login (brute force protection, audit log)
+- GET /api/auth/me, POST /api/auth/logout, POST /api/auth/refresh
+- Role-based access via `require_roles()` dependency
+- Bcrypt password hashing, seed Super Admin on startup
 
-- [ ] `/admin/login` — Supabase Auth login page
-- [ ] `/admin` — Dashboard with stats
-- [ ] `/admin/blog` — Blog post CRUD (list, create, edit, delete)
-- [ ] `/admin/careers` — Job listings CRUD
-- [ ] `/admin/leads` — Contact/lead review + status updates
-- [ ] `/admin/newsletter` — Subscriber management + CSV export
-- [ ] `/admin/experts` — Expert Network review + approval
-- [ ] `/admin/waitlist` — Waitlist management
+### ✅ Admin API Endpoints
+- GET /api/admin/stats — dashboard counts (6 categories)
+- Blog CRUD: GET/POST /api/admin/blog, GET/PUT/DELETE /api/admin/blog/:id
+- Careers CRUD: GET/POST /api/admin/careers, etc.
+- Leads: GET /api/admin/leads, PATCH /api/admin/leads/:id/status
+- Newsletter: GET /api/admin/newsletter, DELETE /api/admin/newsletter/:id
+- Experts: GET /api/admin/experts, PATCH /api/admin/experts/:id/status
+- Waitlist: GET /api/admin/waitlist, PATCH /api/admin/waitlist/:id/status
+- Admin Users: GET/POST /api/admin/users, PUT/DELETE /api/admin/users/:id
+- Logs: GET /api/admin/audit-logs, GET /api/admin/activity-logs
+
+### ✅ Public API Endpoints (single source of truth)
+- GET /api/public/blog, GET /api/public/blog/:slug
+- GET /api/public/careers, GET /api/public/careers/:slug
+- POST /api/public/contact, /api/public/newsletter/subscribe
+- POST /api/public/waitlist/join, /api/public/experts/apply, /api/public/careers/apply
+
+### ✅ Audit & Activity Logging
+- All write operations log to audit_logs (before/after state + changes diff)
+- User actions log to activity_logs
+- Login/logout tracked in audit_logs
+
+### ✅ Seed Data
+- 6 blog posts seeded on startup (if collection empty)
+- 6 job listings seeded on startup (if collection empty)
+- Super Admin seeded from ADMIN_EMAIL/ADMIN_PASSWORD env vars
+
+### ✅ Admin Frontend
+- /admin/login — standalone login page (dark, Gorakhai branded)
+- /admin — protected dashboard with 6 stat cards + recent activity feed
+- /admin/blog — blog list + /admin/blog/new + /admin/blog/:id editor
+- /admin/careers — careers list + /admin/careers/new + /admin/careers/:id editor
+- /admin/leads — lead management with detail panel + status workflow
+- /admin/newsletter — subscriber list + CSV export
+- /admin/experts — expert applications with approve/reject workflow
+- /admin/waitlist — waitlist management + invite/convert workflow
+- /admin/users — admin user management (super admin only)
+- /admin/activity-logs — full audit trail with change diffs
+- Future placeholders (Coming Soon): AI Boardroom, Expert Marketplace, Community, Events, Partner Program
+
+### ✅ Public Hooks Updated
+- useBlogPosts.js → reads from /api/public/blog + mock fallback
+- useJobListings.js → reads from /api/public/careers + mock fallback
+- supabaseClient.js submitForm → routes to backend API endpoints
 
 ## Phase 2 Backlog (Post Approval)
-- Supabase live data connection (replace mock data)
-- Image upload (Supabase Storage)
-- Email notifications on form submissions (Resend)
-- Blog search + pagination
-- Analytics integration
+- P0: Image upload for blog posts (Supabase Storage or S3)
+- P0: Rich text editor for blog content (react-quill or tiptap)
+- P1: Email notifications on form submissions (Resend integration)
+- P1: AI Boardroom feature (future milestone)
+- P1: Human Expert Marketplace (future milestone)
+- P2: Community features (future milestone)
+- P2: Events management (future milestone)
+- P2: Partner Program (future milestone)
+- P2: Blog search + pagination on public site
+- P2: Analytics integration (Plausible or GA4)
+- P2: Cloudflare Pages deployment config + GitHub Actions CI/CD
 
 ## Environment Variables
 ```
-REACT_APP_SUPABASE_URL=
-REACT_APP_SUPABASE_ANON_KEY=
-REACT_APP_SUPABASE_SERVICE_ROLE_KEY=   (admin CMS only)
-REACT_APP_SITE_URL=https://gorakhai.com
-REACT_APP_BACKEND_URL=
+# Backend (.env)
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=gorakhai_cms
+CORS_ORIGINS=https://gorakhai-business.preview.emergentagent.com,http://localhost:3000
+JWT_SECRET=<64-char hex>
+ADMIN_EMAIL=superadmin@gorakhai.com
+ADMIN_PASSWORD=<password>
+FRONTEND_URL=https://gorakhai-business.preview.emergentagent.com
+
+# Frontend (.env)
+REACT_APP_BACKEND_URL=https://gorakhai-business.preview.emergentagent.com
+REACT_APP_SUPABASE_URL=<optional>
+REACT_APP_SUPABASE_ANON_KEY=<optional>
 ```
