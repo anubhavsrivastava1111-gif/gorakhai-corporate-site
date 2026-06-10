@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, GitBranch, Eye, Zap, Shield, DollarSign, Settings, CheckCircle2 } from 'lucide-react';
+import SEOMeta from '@/components/seo/SEOMeta';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -28,11 +28,9 @@ const useCases = [
 ];
 
 export default function OrchestraIQ() {
-  useEffect(() => {
-    document.title = 'Orchestra IQ — AI Orchestration Platform | Gorakhai';
-  }, []);
-
   return (
+    <>
+      <SEOMeta title="Orchestra IQ — AI Orchestration Platform" description="Coordinate multiple AI models, build intelligent workflows, and monitor every AI interaction across your enterprise. One platform. Every AI model." canonicalPath="/products/orchestra-iq" />
     <div className="bg-[#050505] text-white">
       {/* HERO */}
       <section className="relative py-32 overflow-hidden">
@@ -218,5 +216,6 @@ export default function OrchestraIQ() {
         </div>
       </section>
     </div>
+    </>
   );
 }

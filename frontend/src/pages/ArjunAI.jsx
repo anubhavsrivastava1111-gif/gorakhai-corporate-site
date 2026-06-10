@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Brain, Database, Layers, Lock, MessageSquare, FileText, CheckCircle2 } from 'lucide-react';
+import SEOMeta from '@/components/seo/SEOMeta';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -26,11 +26,9 @@ const integrations = [
 ];
 
 export default function ArjunAI() {
-  useEffect(() => {
-    document.title = 'Arjun AI — Enterprise AI Assistant | Gorakhai';
-  }, []);
-
   return (
+    <>
+      <SEOMeta title="Arjun AI — Enterprise AI Assistant" description="Precision intelligence for the modern enterprise. Arjun AI connects to 100+ enterprise tools, understands your organization, and delivers accurate answers at scale." canonicalPath="/products/arjun-ai" />
     <div className="bg-[#050505] text-white">
       {/* HERO */}
       <section className="relative py-32 overflow-hidden">
@@ -220,5 +218,6 @@ export default function ArjunAI() {
         </div>
       </section>
     </div>
+    </>
   );
 }

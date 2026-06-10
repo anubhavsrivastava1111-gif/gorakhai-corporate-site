@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Zap, Brain, CheckCircle2 } from 'lucide-react';
+import SEOMeta from '@/components/seo/SEOMeta';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -12,11 +12,9 @@ const fadeUp = {
 };
 
 export default function Products() {
-  useEffect(() => {
-    document.title = 'Products — Gorakhai';
-  }, []);
-
   return (
+    <>
+      <SEOMeta title="Products" description="Orchestra IQ and Arjun AI — purpose-built AI platforms for the modern enterprise." canonicalPath="/products" />
     <div className="bg-[#050505] text-white">
       {/* HERO */}
       <section className="py-32 max-w-7xl mx-auto px-6">
@@ -257,5 +255,6 @@ console.log(response.metadata.costSaved); // "$0.006"`}</code>
         </motion.div>
       </section>
     </div>
+    </>
   );
 }

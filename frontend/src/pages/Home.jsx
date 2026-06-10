@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Zap, Brain, Shield, BarChart3, GitBranch, Eye } from 'lucide-react';
 import NewsletterForm from '@/components/sections/NewsletterForm';
+import SEOMeta, { OrganizationSchema, WebSiteSchema } from '@/components/seo/SEOMeta';
 import { HOME } from '@/constants/testIds';
 
 const fadeUp = {
@@ -32,11 +32,13 @@ const features = [
 const marqueeItems = ['AI Orchestration', 'Enterprise Grade', 'Multi-Model Routing', 'Real-Time Analytics', 'Privacy First', 'SOC 2 Certified', 'On-Premise Deployment', 'API First'];
 
 export default function Home() {
-  useEffect(() => {
-    document.title = 'Gorakhai — Enterprise AI Intelligence';
-  }, []);
-
   return (
+    <>
+      <SEOMeta
+        description="Gorakhai builds enterprise AI infrastructure. Orchestra IQ orchestrates your AI ecosystem. Arjun AI amplifies your team."
+        canonicalPath="/"
+        schema={[OrganizationSchema, WebSiteSchema]}
+      />
     <div className="bg-[#050505] text-white overflow-hidden">
       {/* HERO */}
       <section className="relative min-h-screen flex flex-col justify-center grid-bg">
@@ -293,5 +295,6 @@ export default function Home() {
         </div>
       </section>
     </div>
+    </>
   );
 }

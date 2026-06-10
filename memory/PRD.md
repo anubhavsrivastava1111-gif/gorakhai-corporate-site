@@ -1,102 +1,114 @@
-# Gorakhai Corporate Site — Phase 1
+# Gorakhai Corporate Site — PRD
 
 ## Original Problem Statement
-Build Phase 1 of the Gorakhai corporate website — enterprise AI technology company. Must be deployable via Cloudflare, integrated with Supabase, mobile responsive, SEO optimized, and enterprise-grade UI/UX.
+Build Phase 1 of Gorakhai corporate website with dedicated Supabase project (gorakhai-corporate), Cloudflare Pages deployment, Admin CMS, SEO optimization, and milestone-based implementation. Completely independent from Orchestra IQ/Admin projects.
 
 ## Architecture
-- **Frontend**: React 19 + Tailwind CSS + shadcn/radix UI + Framer Motion
-- **Database**: Supabase (PostgreSQL) — mock mode for development
+- **Frontend**: React 19 + Tailwind CSS + shadcn/radix UI + Framer Motion + react-helmet-async
+- **Database**: Supabase PostgreSQL (gorakhai-corporate project) — dedicated, isolated
 - **Hosting**: Cloudflare Pages (static SPA build)
-- **Source Control**: GitHub
-- **CI/CD**: GitHub Actions → Cloudflare Pages auto-deploy
+- **Source Control**: GitHub (`gorakhai-corporate-site`)
+- **CI/CD**: GitHub Actions → `.github/workflows/deploy.yml`
 
-## Design System
-- **Theme**: Dark Swiss Brutalist (inspired by Anthropic, Linear, Vercel)
-- **Background**: #050505
-- **Accent**: #002FA7 (Klein Blue)
-- **Fonts**: Outfit (headings) + Inter (body)
-- **Components**: shadcn/radix UI + custom Tailwind
-
-## Implemented (Phase 1 — Completed Feb 2026)
-
-### Pages
-- [x] **Home** (`/`) — Hero, stats, product cards, features grid, CTA, newsletter
-- [x] **About** (`/about`) — Mission, values bento grid, team, stats, CTA
-- [x] **Products Hub** (`/products`) — Product overview with code demo widget
-- [x] **Orchestra IQ** (`/products/orchestra-iq`) — Full feature deep-dive
-- [x] **Arjun AI** (`/products/arjun-ai`) — Feature showcase, integrations, deployment
-- [x] **Blog** (`/blog`) — Featured post, category filter, post grid
-- [x] **Blog Post** (`/blog/:slug`) — Full article, author, related posts
-- [x] **Contact** (`/contact`) — Contact form + lead capture, info panel
-- [x] **Careers** (`/careers`) — Job listings, department filter, benefits
-- [x] **Career Detail** (`/careers/:slug`) — Job description + application form
-- [x] **Expert Network** (`/expert-network`) — Intro, benefits, multi-select registration form
-
-### Components
-- [x] Header with sticky glass effect, Products dropdown, mobile hamburger menu
-- [x] Footer with 4-column layout and social links
-- [x] NewsletterForm component (reusable)
-- [x] Layout wrapper with ScrollToTop
-
-### Database (Supabase Schema)
-- `blog_posts` — Blog content management
-- `contact_submissions` — Contact/lead capture forms
-- `newsletter_subscribers` — Newsletter signups
-- `lead_captures` — Product lead capture
-- `job_listings` — Career opportunities
-- `job_applications` — Job applications
-- `expert_network_registrations` — Expert registrations
-
-### Mock Data
-- 6 realistic blog posts (Case Studies, Engineering, AI Research, Enterprise AI, Product Updates)
-- 6 job listings (Engineering, Product, Sales, Design, Operations)
-- 4 leadership team members
-
-### Deployment
-- Cloudflare Pages build config: `cd frontend && yarn build`
-- Build output: `frontend/build`
-- SPA routing: `public/_redirects` (`/* /index.html 200`)
-- GitHub Actions CI/CD: `.github/workflows/deploy.yml`
-
-## Environment Variables Required
+## Repository Structure
 ```
-REACT_APP_SUPABASE_URL=your_supabase_project_url
-REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
-REACT_APP_BACKEND_URL=https://your-backend-url
+gorakhai-corporate-site/
+├── .github/workflows/deploy.yml      CI/CD
+├── docs/
+│   ├── SUPABASE_SETUP.md             Full Supabase setup guide
+│   ├── CLOUDFLARE_DEPLOY.md          Cloudflare deployment guide
+│   └── ADMIN_GUIDE.md                Admin CMS guide
+├── frontend/
+│   ├── public/
+│   │   ├── _redirects                SPA routing for Cloudflare
+│   │   ├── robots.txt
+│   │   └── sitemap.xml               Static sitemap (12 pages + blog/careers)
+│   └── src/
+│       ├── admin/                    Admin CMS (Milestone 2)
+│       ├── components/
+│       │   ├── layout/ (Header, Footer, Layout)
+│       │   ├── sections/ (NewsletterForm)
+│       │   ├── seo/ (SEOMeta — react-helmet-async)
+│       │   └── ui/ (shadcn)
+│       ├── constants/ (mockData, testIds)
+│       ├── hooks/ (useBlogPosts, useJobListings, useFormSubmit)
+│       ├── lib/ (supabaseClient)
+│       └── pages/ (12 routes)
+└── supabase/
+    ├── migrations/
+    │   ├── 001_initial_schema.sql    All 9 tables + indexes
+    │   └── 002_rls_policies.sql      Row Level Security policies
+    └── seed/
+        └── seed_data.sql             Development seed data
 ```
-GitHub Secrets needed for CI/CD:
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
 
-## Phase 2 Backlog (P0/P1/P2)
+## Database Schema (9 Tables)
+| Table | Purpose | RLS |
+|-------|---------|-----|
+| `blog_categories` | Blog taxonomies | Public read |
+| `blog_posts` | Blog articles | Public read (published only) |
+| `contact_submissions` | Contact/demo requests | Public insert |
+| `newsletter_subscribers` | Newsletter list | Public insert |
+| `lead_captures` | Product leads | Public insert |
+| `job_listings` | Open positions | Public read (open only) |
+| `job_applications` | Job applications | Public insert |
+| `expert_network_registrations` | Expert applications | Public insert |
+| `waitlist_subscribers` | Product waitlist | Public insert |
 
-### P0 — Required for Production
-- [ ] Add actual Supabase credentials (env vars)
-- [ ] Create Supabase tables + RLS policies (SQL migrations in `/supabase/migrations/`)
-- [ ] Set up Cloudflare Pages project + domain
-- [ ] Configure DNS on Cloudflare
+## Implemented — Milestone 1 (Feb 2026)
 
-### P1 — Important Features
-- [ ] Admin CMS dashboard (blog post editor, job listings manager)
-- [ ] Newsletter email delivery (Resend or SendGrid integration)
-- [ ] Contact form email notifications
-- [ ] Sitemap.xml auto-generation
-- [ ] Analytics (Plausible or GA4 via Cloudflare Workers)
-- [ ] Dark/Light mode toggle
+### ✅ Pages (12 routes)
+- Home, About, Products, Orchestra IQ, Arjun AI
+- Blog + BlogPost, Contact, Careers + CareerDetail
+- Expert Network, Waitlist (new)
 
-### P2 — Nice to Have
-- [ ] Blog search functionality
-- [ ] Blog RSS feed
-- [ ] Video testimonials section
-- [ ] Pricing page
-- [ ] Documentation/Knowledge Base
-- [ ] Customer case study pages
-- [ ] Cookie consent banner (GDPR)
+### ✅ SEO
+- react-helmet-async for meta tags
+- OpenGraph + Twitter Card on all pages
+- JSON-LD structured data (Organization, Website, BlogPosting, JobPosting)
+- sitemap.xml (static, 25 URLs)
+- robots.txt (blocks /admin)
 
-## Test Results
-- Testing Agent Pass Rate: 96%
-- All 11 pages: PASS
-- Navigation: PASS
-- Forms (mock mode): PASS
-- Mobile responsiveness: PASS
-- SEO titles: PASS
+### ✅ Database
+- 001_initial_schema.sql — complete schema with 9 tables, indexes, triggers
+- 002_rls_policies.sql — full RLS policy setup
+- seed_data.sql — dev seed data
+
+### ✅ Documentation
+- SUPABASE_SETUP.md — step-by-step Supabase setup
+- CLOUDFLARE_DEPLOY.md — full deployment guide
+- ADMIN_GUIDE.md — Admin CMS usage guide
+
+### ✅ Foundation
+- useBlogPosts, useJobListings, useFormSubmit hooks
+- react-helmet-async installed + configured
+- Updated .env.example
+- GitHub Actions CI/CD (`.github/workflows/deploy.yml`)
+
+## Next — Milestone 2 (Admin CMS)
+### Pending User Approval
+
+- [ ] `/admin/login` — Supabase Auth login page
+- [ ] `/admin` — Dashboard with stats
+- [ ] `/admin/blog` — Blog post CRUD (list, create, edit, delete)
+- [ ] `/admin/careers` — Job listings CRUD
+- [ ] `/admin/leads` — Contact/lead review + status updates
+- [ ] `/admin/newsletter` — Subscriber management + CSV export
+- [ ] `/admin/experts` — Expert Network review + approval
+- [ ] `/admin/waitlist` — Waitlist management
+
+## Phase 2 Backlog (Post Approval)
+- Supabase live data connection (replace mock data)
+- Image upload (Supabase Storage)
+- Email notifications on form submissions (Resend)
+- Blog search + pagination
+- Analytics integration
+
+## Environment Variables
+```
+REACT_APP_SUPABASE_URL=
+REACT_APP_SUPABASE_ANON_KEY=
+REACT_APP_SUPABASE_SERVICE_ROLE_KEY=   (admin CMS only)
+REACT_APP_SITE_URL=https://gorakhai.com
+REACT_APP_BACKEND_URL=
+```

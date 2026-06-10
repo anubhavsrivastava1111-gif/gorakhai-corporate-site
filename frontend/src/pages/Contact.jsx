@@ -3,15 +3,12 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Mail, Phone, MapPin, ArrowRight, Linkedin, Twitter } from 'lucide-react';
 import { submitForm } from '@/lib/supabaseClient';
+import SEOMeta from '@/components/seo/SEOMeta';
 import { CONTACT } from '@/constants/testIds';
 
 const interests = ['Orchestra IQ', 'Arjun AI', 'Both Platforms', 'Enterprise Pricing', 'Technical Integration', 'General Inquiry'];
 
 export default function Contact() {
-  useEffect(() => {
-    document.title = 'Contact Us — Gorakhai';
-  }, []);
-
   const [form, setForm] = useState({ name: '', email: '', company: '', jobTitle: '', interest: '', message: '' });
   const [status, setStatus] = useState('idle');
   const [errors, setErrors] = useState({});
@@ -63,6 +60,8 @@ export default function Contact() {
   );
 
   return (
+    <>
+      <SEOMeta title="Contact Us" description="Get in touch with the Gorakhai team. Request a demo of Orchestra IQ or Arjun AI." canonicalPath="/contact" />
     <div className="bg-[#050505] text-white">
       {/* HERO */}
       <section className="py-24 max-w-7xl mx-auto px-6">
@@ -232,5 +231,6 @@ export default function Contact() {
         </div>
       </section>
     </div>
+    </>
   );
 }

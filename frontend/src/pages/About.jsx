@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Target, Users, Globe, Lightbulb, Lock, Heart } from 'lucide-react';
+import SEOMeta from '@/components/seo/SEOMeta';
 import { TEAM_MEMBERS } from '@/constants/mockData';
 
 const fadeUp = {
@@ -22,11 +22,13 @@ const values = [
 ];
 
 export default function About() {
-  useEffect(() => {
-    document.title = 'About Us — Gorakhai';
-  }, []);
-
   return (
+    <>
+      <SEOMeta
+        title="About Us"
+        description="Learn about Gorakhai's mission to make enterprise AI reliable, observable, and scalable. Meet the team building the future of AI infrastructure."
+        canonicalPath="/about"
+      />
     <div className="bg-[#050505] text-white">
       {/* HERO */}
       <section className="py-32 max-w-7xl mx-auto px-6">
@@ -200,5 +202,6 @@ export default function About() {
         </motion.div>
       </section>
     </div>
+    </>
   );
 }
