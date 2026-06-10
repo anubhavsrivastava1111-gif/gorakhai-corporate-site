@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { JOB_LISTINGS } from '@/constants/mockData';
+
+const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
 export function useJobListings({ department = null, status = 'open' } = {}) {
   const [jobs, setJobs] = useState([]);
@@ -11,36 +12,23 @@ export function useJobListings({ department = null, status = 'open' } = {}) {
     async function fetchJobs() {
       setLoading(true);
       setError(null);
-
-      if (!isSupabaseConfigured || !supabase) {
-        let filtered = JOB_LISTINGS;
-        if (department) filtered = filtered.filter(j => j.department === department);
-        setJobs(filtered);
-        setLoading(false);
-        return;
-      }
-
       try {
-        let query = supabase
-          .from('job_listings')
-          .select('*')
-          .eq('status', status)
-          .order('posted_at', { ascending: false });
-
-        if (department) query = query.eq('department', department);
-
-        const { data, error: err } = await query;
-        if (err) throw err;
-        setJobs(data || []);
+        const params = new URLSearchParams({ limit: 50 });
+        if (department && department !== 'All') params.set('department', department);
+        const res = await fetch(`${API_BASE}/api/public/careers?${params}`);
+        if (!res.ok) throw new Error('Failed to fetch jobs');
+        const data = await res.json();
+        setJobs(data.jobs || []);
       } catch (err) {
         console.error('useJobListings error:', err);
         setError(err.message);
-        setJobs(JOB_LISTINGS);
+        let filtered = JOB_LISTINGS;
+        if (department && department !== 'All') filtered = filtered.filter(j => j.department === department);
+        setJobs(filtered);
       } finally {
         setLoading(false);
       }
     }
-
     fetchJobs();
   }, [department, status]);
 
@@ -54,24 +42,12 @@ export function useJobListing(slug) {
 
   useEffect(() => {
     if (!slug) return;
-
     async function fetchJob() {
       setLoading(true);
-
-      if (!isSupabaseConfigured || !supabase) {
-        setJob(JOB_LISTINGS.find(j => j.slug === slug) || null);
-        setLoading(false);
-        return;
-      }
-
       try {
-        const { data, error: err } = await supabase
-          .from('job_listings')
-          .select('*')
-          .eq('slug', slug)
-          .single();
-
-        if (err) throw err;
+        const res = await fetch(`${API_BASE}/api/public/careers/${slug}`);
+        if (!res.ok) throw new Error('Job not found');
+        const data = await res.json();
         setJob(data);
       } catch (err) {
         setError(err.message);
@@ -80,7 +56,6 @@ export function useJobListing(slug) {
         setLoading(false);
       }
     }
-
     fetchJob();
   }, [slug]);
 
