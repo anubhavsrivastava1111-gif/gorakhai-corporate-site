@@ -24,8 +24,9 @@ export default function NewsletterForm({ variant = 'default' }) {
         subscribed_at: new Date().toISOString()
       });
       setStatus('success');
-    } catch {
+    } catch (err) {
       setStatus('error');
+      setError(err.message || 'Something went wrong. Please try again.');
     }
   };
 
@@ -87,7 +88,7 @@ export default function NewsletterForm({ variant = 'default' }) {
             exit={{ opacity: 0 }}
             className="mt-2 text-xs text-red-400"
           >
-            Something went wrong. Please try again.
+            {error}
           </motion.p>
         )}
       </AnimatePresence>

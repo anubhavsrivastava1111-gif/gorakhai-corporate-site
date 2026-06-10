@@ -34,6 +34,7 @@ export default function ExpertNetwork() {
   });
   const [status, setStatus] = useState('idle');
   const [errors, setErrors] = useState({});
+  const [submitErr, setSubmitErr] = useState('');
 
   const toggleExpertise = (area) => {
     setForm(p => ({
@@ -71,7 +72,7 @@ export default function ExpertNetwork() {
         created_at: new Date().toISOString()
       });
       setStatus('success');
-    } catch { setStatus('error'); }
+    } catch (err) { setStatus('error'); setSubmitErr(err.message || 'Something went wrong. Please try again.'); }
   };
 
   const inputCls = (err) => `w-full px-4 py-2.5 bg-zinc-900 border rounded-md text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-[#002FA7] transition-colors ${err ? 'border-red-500' : 'border-zinc-800 focus:border-[#002FA7]'}`;
@@ -290,7 +291,7 @@ export default function ExpertNetwork() {
                     </select>
                   </div>
 
-                  {status === 'error' && <p className="text-sm text-red-400">Something went wrong. Please try again.</p>}
+                  {status === 'error' && <p className="text-sm text-red-400">{submitErr}</p>}
 
                   <button
                     type="submit"

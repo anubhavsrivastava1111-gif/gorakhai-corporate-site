@@ -12,6 +12,7 @@ export default function CareerDetail() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', linkedin: '', portfolio: '', coverLetter: '' });
   const [status, setStatus] = useState('idle');
   const [errors, setErrors] = useState({});
+  const [submitErr, setSubmitErr] = useState('');
 
   useEffect(() => {
     if (job) document.title = `${job.title} — Careers at Gorakhai`;
@@ -44,7 +45,7 @@ export default function CareerDetail() {
         created_at: new Date().toISOString()
       });
       setStatus('success');
-    } catch { setStatus('error'); }
+    } catch (err) { setStatus('error'); setSubmitErr(err.message || 'Something went wrong. Please try again.'); }
   };
 
   const inputCls = (err) => `w-full px-4 py-2.5 bg-zinc-900 border rounded-md text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-[#002FA7] transition-colors ${err ? 'border-red-500' : 'border-zinc-800 focus:border-[#002FA7]'}`;
@@ -141,7 +142,7 @@ export default function CareerDetail() {
                       <label className="block text-xs text-zinc-500 mb-1">Cover Letter (optional)</label>
                       <textarea value={form.coverLetter} onChange={e => setForm(p => ({ ...p, coverLetter: e.target.value }))} rows={4} placeholder="Tell us why you want to join Gorakhai..." className={`${inputCls()} resize-none`} />
                     </div>
-                    {status === 'error' && <p className="text-xs text-red-400">Something went wrong. Please try again.</p>}
+                    {status === 'error' && <p className="text-xs text-red-400">{submitErr}</p>}
                     <button
                       type="submit"
                       disabled={status === 'loading'}

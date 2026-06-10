@@ -11,7 +11,7 @@ const products = [
 ];
 
 export default function Waitlist() {
-  const { submit, status } = useFormSubmit('waitlist_subscribers');
+  const { submit, status, errorMsg } = useFormSubmit('waitlist_subscribers');
   const [form, setForm] = useState({ email: '', name: '', company: '', jobTitle: '', product: '', sourcePage: '/waitlist' });
   const [errors, setErrors] = useState({});
 
@@ -149,7 +149,7 @@ export default function Waitlist() {
                     </div>
                   </div>
 
-                  {status === 'error' && <p className="text-sm text-red-400">Something went wrong. Please try again.</p>}
+                  {status === 'error' && <p className="text-sm text-red-400">{errorMsg || 'Something went wrong. Please try again.'}</p>}
 
                   <button
                     type="submit"

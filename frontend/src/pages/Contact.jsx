@@ -12,6 +12,7 @@ export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', company: '', jobTitle: '', interest: '', message: '' });
   const [status, setStatus] = useState('idle');
   const [errors, setErrors] = useState({});
+  const [submitErr, setSubmitErr] = useState('');
 
   const validate = () => {
     const e = {};
@@ -39,8 +40,9 @@ export default function Contact() {
         created_at: new Date().toISOString()
       });
       setStatus('success');
-    } catch {
+    } catch (err) {
       setStatus('error');
+      setSubmitErr(err.message || 'Something went wrong. Please try again.');
     }
   };
 
@@ -143,7 +145,7 @@ export default function Contact() {
                     </div>
 
                     {status === 'error' && (
-                      <p className="text-sm text-red-400">Something went wrong. Please try again.</p>
+                      <p className="text-sm text-red-400">{submitErr}</p>
                     )}
 
                     <button

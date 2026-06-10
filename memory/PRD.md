@@ -214,7 +214,22 @@ Build a production-grade corporate site for GorakhAI with a public-facing market
 
 ---
 
-## Current Status: Deployment-Ready
+## ✅ Phase A — Cloudflare Pages Deployment Readiness (Feb 2026)
+
+### Form Behaviour Fixed for Phase A
+All 5 public-facing forms updated to surface a clear, actionable error message
+when the backend is not yet active. No form returns a false success state.
+
+Files changed:
+- `src/lib/supabaseClient.js` — throws `PHASE_A_MSG` instead of `{ success: true, mock: true }`
+- `src/pages/Contact.jsx` — captures `err.message`, displays it
+- `src/pages/ExpertNetwork.jsx` — captures `err.message`, displays it
+- `src/pages/CareerDetail.jsx` — captures `err.message`, displays it
+- `src/pages/Waitlist.jsx` — surfaces `errorMsg` from `useFormSubmit`
+- `src/components/sections/NewsletterForm.jsx` — captures `err.message`, displays it
+
+### Deployment docs
+- `docs/PHASE_A_DEPLOYMENT.md` — full step-by-step guide for non-technical founder
 
 ### What needs to happen before going live
 1. **MongoDB Atlas** — create free M0 cluster, get connection string

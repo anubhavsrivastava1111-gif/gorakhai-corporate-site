@@ -22,24 +22,35 @@ const TABLE_TO_ENDPOINT = {
   job_applications: '/api/public/careers/apply',
 };
 
+// Phase A message shown when backend is not yet active
+const PHASE_A_MSG =
+  'Our submission system is being activated. For immediate assistance, please email hello@gorakhai.com — we respond within one business day.';
+
 export async function submitForm(table, data) {
   const endpoint = TABLE_TO_ENDPOINT[table];
   if (endpoint && API_BASE) {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Submission failed');
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Submission failed. Please try again.');
+      }
+      return await res.json();
+    } catch (fetchErr) {
+      // If it is already a meaningful server error, re-throw as-is
+      if (fetchErr.message && fetchErr.message !== 'Failed to fetch' && !(fetchErr instanceof TypeError)) {
+        throw fetchErr;
+      }
+      // Network error — backend not yet reachable (Phase A or server down)
+      throw new Error(PHASE_A_MSG);
     }
-    return await res.json();
   }
-  // Fallback: log in dev mode
-  console.log(`[DEV MODE] Form submission to "${table}":`, data);
-  await new Promise(r => setTimeout(r, 800));
-  return { success: true, mock: true };
+  // Backend URL not configured — Phase A frontend-only deployment
+  throw new Error(PHASE_A_MSG);
 }
 
 export async function fetchRows(table, query = {}) {
