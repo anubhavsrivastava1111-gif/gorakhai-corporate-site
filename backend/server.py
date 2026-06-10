@@ -16,9 +16,12 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from db import init_db, get_db, close_db
 from auth import hash_password, verify_password
+from storage import get_storage_provider
 from routes.auth_routes import router as auth_router
 from routes.admin_routes import router as admin_router
 from routes.public_routes import router as public_router
+from routes.media_routes import admin_router as media_admin_router
+from routes.media_routes import public_router as media_public_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -72,6 +75,8 @@ app.include_router(api_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(public_router)
+app.include_router(media_admin_router)
+app.include_router(media_public_router)
 
 # CORS — must list explicit origins when credentials=True
 _cors_origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")]
@@ -344,12 +349,15 @@ async def create_indexes():
     await db.login_attempts.create_index("identifier")
     await db.audit_logs.create_index([("created_at", -1)])
     await db.activity_logs.create_index([("created_at", -1)])
+    await db.media.create_index([("created_at", -1)])
+    await db.media.create_index("context")
     logger.info("MongoDB indexes created")
 
 
 @app.on_event("startup")
 async def startup():
     init_db()
+    get_storage_provider()   # initialise + log chosen provider
     await create_indexes()
     await seed_database()
     logger.info("Gorakhai CMS API started")

@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Calendar, ArrowRight } from 'lucide-react';
-import { BLOG_POSTS } from '@/constants/mockData';
+import { useBlogPost, useBlogPosts } from '@/hooks/useBlogPosts';
 import NewsletterForm from '@/components/sections/NewsletterForm';
+import '@/components/editor/tiptap.css';
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -11,14 +12,28 @@ function formatDate(d) {
 
 export default function BlogPost() {
   const { slug } = useParams();
-  const post = BLOG_POSTS.find(p => p.slug === slug);
-  const related = BLOG_POSTS.filter(p => p.slug !== slug).slice(0, 3);
+  const { post, loading } = useBlogPost(slug);
+  const { posts: allPosts } = useBlogPosts({ limit: 4 });
+  const related = allPosts.filter(p => p.slug !== slug).slice(0, 3);
 
   useEffect(() => {
     if (post) document.title = `${post.title} — Gorakhai Blog`;
   }, [post]);
 
-  if (!post) return <Navigate to="/blog" replace />;
+  if (loading) return (
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#002FA7] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!post) return (
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">
+      <div className="text-center">
+        <p className="text-lg font-medium">Post not found</p>
+        <Link to="/blog" className="text-[#002FA7] text-sm mt-2 inline-block hover:underline">Back to Blog</Link>
+      </div>
+    </div>
+  );
 
   return (
     <div className="bg-[#050505] text-white">
@@ -78,7 +93,7 @@ export default function BlogPost() {
         >
           <p className="text-lg text-zinc-400 leading-relaxed mb-8">{post.excerpt}</p>
           <div
-            className="prose prose-invert prose-zinc max-w-none prose-p:text-zinc-400 prose-p:leading-relaxed prose-h2:font-heading prose-h2:text-white prose-h2:tracking-tight prose-li:text-zinc-400"
+            className="tiptap-prose"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </motion.div>

@@ -1,0 +1,58 @@
+version: "3.9"
+
+# ─── Gorakhai CMS — docker-compose ────────────────────────────────────────
+# Environments:
+#   Local dev:   docker compose up
+#   Production:  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  # ── MongoDB ────────────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: gorakhai-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: gorakhai_cms
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"   # remove in prod — expose only to backend
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gorakhai-backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env.production   # create from .env.example before deploying
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      DB_NAME: gorakhai_cms
+      STORAGE_PROVIDER: local
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads   # persist uploaded media
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  mongo_data:
+    driver: local
+  uploads_data:
+    driver: local

@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api, { formatError } from "@/lib/api";
 import { useAuth } from "@/admin/context/AuthContext";
-import { ArrowLeft, Save, Eye, Loader } from "lucide-react";
+import { ArrowLeft, Save, Eye, Loader, Upload, X, Image } from "lucide-react";
+import TipTapEditor from "@/components/editor/TipTapEditor";
 
 const CATEGORIES = ["Case Studies", "Engineering", "AI Research", "Enterprise AI", "Product Updates", "Company News"];
 const STATUS_OPTIONS = ["draft", "published", "archived"];
@@ -11,6 +12,125 @@ function slugify(text) {
   return text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/-+/g, "-").trim();
 }
 
+// ─── Cover Image Upload Zone ────────────────────────────────────────────────
+function CoverImageUpload({ value, onChange }) {
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState("");
+  const fileRef = useRef(null);
+
+  const upload = useCallback(async (file) => {
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("context", "blog_cover");
+      form.append("alt_text", "Blog cover image");
+      const res = await api.post("/api/admin/media/upload", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      onChange(`${process.env.REACT_APP_BACKEND_URL}${res.data.url}`);
+    } catch (err) {
+      setError(formatError(err.response?.data?.detail) || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }, [onChange]);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    upload(e.dataTransfer.files[0]);
+  };
+
+  return (
+    <div>
+      {value ? (
+        <div className="relative group">
+          <img
+            src={value}
+            alt="Cover"
+            className="w-full h-40 object-cover rounded-lg"
+          />
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm transition-colors"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Replace
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="flex items-center gap-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              Remove
+            </button>
+          </div>
+          {uploading && (
+            <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
+              <Loader className="w-6 h-6 text-white animate-spin" />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div
+          onClick={() => fileRef.current?.click()}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+            dragOver
+              ? "border-[#002FA7] bg-[#002FA7]/10"
+              : "border-slate-700 hover:border-slate-600"
+          }`}
+          data-testid="cover-image-dropzone"
+        >
+          {uploading ? (
+            <div className="flex flex-col items-center gap-2">
+              <Loader className="w-5 h-5 text-[#002FA7] animate-spin" />
+              <p className="text-slate-400 text-xs">Uploading…</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-1.5">
+              <Image className="w-5 h-5 text-slate-600" />
+              <p className="text-slate-400 text-xs">Drop image or click to upload</p>
+              <p className="text-slate-700 text-xs">JPG, PNG, WebP — max 10 MB</p>
+            </div>
+          )}
+        </div>
+      )}
+      {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
+
+      {/* URL fallback input */}
+      <div className="mt-2">
+        <input
+          type="url"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Or enter image URL directly..."
+          className="w-full bg-slate-800/40 border border-slate-700/50 rounded-lg px-3 py-2 text-white text-xs placeholder-slate-700 focus:outline-none focus:border-slate-600"
+          data-testid="cover-image-url-input"
+        />
+      </div>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => upload(e.target.files?.[0])}
+      />
+    </div>
+  );
+}
+
+// ─── Main Blog Editor ────────────────────────────────────────────────────────
 export default function BlogEditor() {
   const { id } = useParams();
   const isNew = !id || id === "new";
@@ -51,6 +171,7 @@ export default function BlogEditor() {
     }
   }, [id, isNew, navigate]);
 
+  // Auto-generate slug from title
   useEffect(() => {
     if (!slugEdited && form.title) {
       setForm((f) => ({ ...f, slug: slugify(f.title) }));
@@ -62,6 +183,14 @@ export default function BlogEditor() {
     if (name === "slug") setSlugEdited(true);
     setForm((f) => ({ ...f, [name]: value }));
   };
+
+  const handleContentChange = useCallback((html) => {
+    setForm((f) => ({ ...f, content: html }));
+  }, []);
+
+  const handleCoverImageChange = useCallback((url) => {
+    setForm((f) => ({ ...f, cover_image_url: url }));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,7 +225,7 @@ export default function BlogEditor() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6" data-testid="blog-editor">
+    <div className="max-w-5xl mx-auto space-y-6" data-testid="blog-editor">
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
@@ -106,7 +235,9 @@ export default function BlogEditor() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-white">{isNew ? "New Blog Post" : "Edit Post"}</h1>
+          <h1 className="text-xl font-bold text-white">
+            {isNew ? "New Blog Post" : "Edit Post"}
+          </h1>
         </div>
         <div className="flex items-center gap-3">
           {!isNew && form.status === "published" && (
@@ -139,16 +270,20 @@ export default function BlogEditor() {
         </div>
       )}
 
-      <form id="blog-form" onSubmit={handleSubmit} className="space-y-5">
+      <form id="blog-form" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Main content */}
+          {/* ── Main content ── */}
           <div className="lg:col-span-2 space-y-5">
+            {/* Title + Slug */}
             <div className="bg-[#0f1117] border border-slate-800 rounded-xl p-5 space-y-4">
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1.5">Title *</label>
                 <input
-                  name="title" value={form.title} onChange={handleChange} required
-                  placeholder="Post title..."
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                  required
+                  placeholder="Post title…"
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#002FA7]"
                   data-testid="blog-title"
                 />
@@ -156,7 +291,9 @@ export default function BlogEditor() {
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1.5">Slug</label>
                 <input
-                  name="slug" value={form.slug} onChange={handleChange}
+                  name="slug"
+                  value={form.slug}
+                  onChange={handleChange}
                   placeholder="auto-generated-from-title"
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-[#002FA7]"
                 />
@@ -164,35 +301,41 @@ export default function BlogEditor() {
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1.5">Excerpt *</label>
                 <textarea
-                  name="excerpt" value={form.excerpt} onChange={handleChange} required rows={3}
-                  placeholder="Brief description for listing pages..."
+                  name="excerpt"
+                  value={form.excerpt}
+                  onChange={handleChange}
+                  required
+                  rows={3}
+                  placeholder="Brief description for listing pages…"
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#002FA7] resize-none"
                   data-testid="blog-excerpt"
                 />
               </div>
             </div>
 
-            <div className="bg-[#0f1117] border border-slate-800 rounded-xl p-5">
-              <label className="text-xs text-slate-500 font-medium block mb-1.5">
-                Content (HTML) *
-              </label>
-              <textarea
-                name="content" value={form.content} onChange={handleChange} required rows={20}
-                placeholder="<p>Write your post content here using HTML...</p>"
-                className="w-full bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-[#002FA7] resize-y"
-                data-testid="blog-content"
+            {/* Rich Text Editor */}
+            <div>
+              <label className="text-xs text-slate-500 font-medium block mb-1.5">Content *</label>
+              <TipTapEditor
+                content={form.content}
+                onChange={handleContentChange}
+                placeholder="Start writing your post… Use the toolbar to format content."
+                minHeight="450px"
               />
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* ── Sidebar ── */}
           <div className="space-y-4">
+            {/* Publish settings */}
             <div className="bg-[#0f1117] border border-slate-800 rounded-xl p-5 space-y-4">
               <h3 className="text-sm font-semibold text-white">Publish Settings</h3>
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1.5">Status</label>
                 <select
-                  name="status" value={form.status} onChange={handleChange}
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#002FA7]"
                   data-testid="blog-status"
                 >
@@ -204,7 +347,9 @@ export default function BlogEditor() {
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1.5">Author</label>
                 <input
-                  name="author_name" value={form.author_name} onChange={handleChange}
+                  name="author_name"
+                  value={form.author_name}
+                  onChange={handleChange}
                   placeholder={user?.name || "Author name"}
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#002FA7]"
                 />
@@ -212,19 +357,26 @@ export default function BlogEditor() {
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1.5">Read Time (mins)</label>
                 <input
-                  type="number" name="read_time_mins" value={form.read_time_mins} onChange={handleChange}
-                  min={1} max={60}
+                  type="number"
+                  name="read_time_mins"
+                  value={form.read_time_mins}
+                  onChange={handleChange}
+                  min={1}
+                  max={60}
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#002FA7]"
                 />
               </div>
             </div>
 
+            {/* Categorization */}
             <div className="bg-[#0f1117] border border-slate-800 rounded-xl p-5 space-y-4">
               <h3 className="text-sm font-semibold text-white">Categorization</h3>
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1.5">Category</label>
                 <select
-                  name="category" value={form.category} onChange={handleChange}
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#002FA7]"
                   data-testid="blog-category"
                 >
@@ -234,26 +386,25 @@ export default function BlogEditor() {
               </div>
               <div>
                 <label className="text-xs text-slate-500 font-medium block mb-1.5">
-                  Tags <span className="text-slate-600">(comma-separated)</span>
+                  Tags <span className="text-slate-700">(comma-separated)</span>
                 </label>
                 <input
-                  name="tags" value={form.tags} onChange={handleChange}
+                  name="tags"
+                  value={form.tags}
+                  onChange={handleChange}
                   placeholder="AI, Enterprise, Strategy"
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#002FA7]"
                 />
               </div>
             </div>
 
-            <div className="bg-[#0f1117] border border-slate-800 rounded-xl p-5">
-              <label className="text-xs text-slate-500 font-medium block mb-1.5">Cover Image URL</label>
-              <input
-                name="cover_image_url" value={form.cover_image_url} onChange={handleChange}
-                placeholder="https://images.pexels.com/..."
-                className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#002FA7]"
+            {/* Cover image */}
+            <div className="bg-[#0f1117] border border-slate-800 rounded-xl p-5 space-y-3">
+              <h3 className="text-sm font-semibold text-white">Cover Image</h3>
+              <CoverImageUpload
+                value={form.cover_image_url}
+                onChange={handleCoverImageChange}
               />
-              {form.cover_image_url && (
-                <img src={form.cover_image_url} alt="Cover preview" className="mt-3 w-full h-28 object-cover rounded-lg opacity-80" />
-              )}
             </div>
           </div>
         </div>
