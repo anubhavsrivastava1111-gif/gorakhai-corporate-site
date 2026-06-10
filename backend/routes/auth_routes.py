@@ -28,6 +28,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
+# In production (COOKIE_SECURE=true), cookies must be Secure + SameSite=None
+# for cross-origin requests (frontend on gorakhai.com, backend on api.gorakhai.com).
+# In development, Secure=False + SameSite=Lax works fine on localhost.
+_COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
+_COOKIE_SAMESITE = "none" if _COOKIE_SECURE else "lax"
+
+
 def _set_tokens(response: Response, user_id: str, email: str, role: str):
     access_token = create_access_token(user_id, email, role)
     refresh_token = create_refresh_token(user_id)
@@ -35,8 +42,8 @@ def _set_tokens(response: Response, user_id: str, email: str, role: str):
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=_COOKIE_SECURE,
+        samesite=_COOKIE_SAMESITE,
         max_age=3600,
         path="/",
     )
@@ -44,8 +51,8 @@ def _set_tokens(response: Response, user_id: str, email: str, role: str):
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=_COOKIE_SECURE,
+        samesite=_COOKIE_SAMESITE,
         max_age=604800,
         path="/",
     )
@@ -155,8 +162,8 @@ async def refresh(request: Request, response: Response):
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
+            secure=_COOKIE_SECURE,
+            samesite=_COOKIE_SAMESITE,
             max_age=3600,
             path="/",
         )

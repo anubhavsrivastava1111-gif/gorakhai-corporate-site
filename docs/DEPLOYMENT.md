@@ -1,37 +1,166 @@
-# Gorakhai Corporate Site — Deployment Guide
+# GorakhAI Corporate Site — Production Deployment Guide
 
-## Architecture Overview
+> **Audience:** Non-technical founder / first-time deployer  
+> **Status:** Deployment-ready. Follow this guide top-to-bottom.  
+> **Last updated:** Feb 2026
+
+---
+
+## Architecture at a Glance
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     PUBLIC INTERNET                      │
-└──────────┬──────────────────────────┬───────────────────┘
-           │                          │
-   ┌───────▼──────────┐     ┌─────────▼──────────┐
-   │  Cloudflare Pages│     │  Backend Server     │
-   │  gorakhai.com    │     │  api.gorakhai.com   │
-   │  (React SPA)     │     │  (FastAPI + MongoDB)│
-   └──────────────────┘     └─────────────────────┘
-                                      │
-                             ┌────────▼────────┐
-                             │    MongoDB       │
-                             │  gorakhai_cms    │
-                             └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                         PUBLIC INTERNET                         │
+└──────────┬──────────────────────────────┬───────────────────────┘
+           │                              │
+   ┌───────▼──────────┐         ┌─────────▼────────────┐
+   │  Cloudflare Pages│         │  Backend Server       │
+   │  gorakhai.com    │  calls  │  api.gorakhai.com     │
+   │  (React SPA)     │────────▶│  (FastAPI + MongoDB)  │
+   └──────────────────┘  HTTPS  └──────────────────────┘
+                                          │
+                                 ┌────────▼────────┐
+                                 │   MongoDB Atlas  │
+                                 │   (free tier)    │
+                                 └─────────────────┘
+```
+
+**Two parts to deploy:**
+1. **Frontend** → Cloudflare Pages (100% free, zero configuration)
+2. **Backend** → Railway or Render (starts at ~$5/month) + MongoDB Atlas (free)
+
+---
+
+## Cost Summary
+
+| Service | Plan | Monthly Cost |
+|---|---|---|
+| Cloudflare Pages (frontend) | Free Forever | **$0** |
+| Cloudflare DNS + SSL + CDN | Free | **$0** |
+| MongoDB Atlas | M0 Free Cluster | **$0** |
+| Railway (backend) | Hobby Plan | **~$5** |
+| **Total minimum** | | **~$5/month** |
+
+> **Cloudflare Free Tier:** 100% compatible. Frontend, DNS, SSL, and CDN are all free. If you add Cloudflare R2 for media storage later, the free tier covers 10GB storage and 1M operations/month — well above early-stage needs.
+
+> **Domain:** If you already own `gorakhai.com` managed through Cloudflare, no additional cost. Domain registration (~$10–15/year) is separate.
+
+---
+
+## Pre-Deployment Checklist
+
+Complete each item before starting the deploy steps.
+
+### GitHub
+- [ ] Repository is pushed to GitHub (e.g. `github.com/your-org/gorakhai-corporate-site`)
+- [ ] `main` branch contains latest code
+
+### Secrets you will generate yourself
+- [ ] **JWT Secret** — run this in your terminal and copy the output:
+  ```bash
+  python3 -c "import secrets; print(secrets.token_hex(32))"
+  ```
+  Example output: `a7f2c3d...` (64 hex characters)
+- [ ] **Admin password** — choose a strong password (12+ chars, mixed case, numbers, symbols)  
+  Example: `Gorakhai#Launch2026`
+
+### Accounts to create (all free)
+- [ ] [Cloudflare account](https://cloudflare.com) — add your domain `gorakhai.com`
+- [ ] [MongoDB Atlas account](https://mongodb.com/atlas) — create free M0 cluster
+- [ ] [Railway account](https://railway.app) — connect your GitHub
+
+---
+
+## Part 1: MongoDB Atlas (Database — Free)
+
+**Time: 10 minutes**
+
+1. Go to [mongodb.com/atlas](https://mongodb.com/atlas) → **Try Free**
+2. Create an organisation and project named `gorakhai`
+3. Click **Create a deployment** → choose **M0 Free** (512 MB, always free)
+4. Choose a cloud provider (AWS or Google) and a region close to your users (e.g., US East)
+5. Name the cluster: `gorakhai-production`
+6. **Security → Database Access** → Add a new database user:
+   - Username: `gorakhai-app`
+   - Password: generate a strong password → **copy and save it**
+   - Role: `Atlas admin`
+7. **Security → Network Access** → Add IP address → **Allow access from anywhere** (`0.0.0.0/0`)
+   > This is required so your backend server can connect. Railway/Render use dynamic IPs.
+8. **Connect → Connect your application** → Driver: Python 3.6+ → copy the connection string:
+   ```
+   mongodb+srv://gorakhai-app:<password>@gorakhai-production.xxxxx.mongodb.net/gorakhai_cms
+   ```
+   Replace `<password>` with the database user password from step 6.
+
+---
+
+## Part 2: Backend on Railway
+
+**Time: 15 minutes**
+
+### 2a. Create Railway project
+
+1. Go to [railway.app](https://railway.app) → Log in with GitHub
+2. Click **New Project → Deploy from GitHub repo**
+3. Select `gorakhai-corporate-site` → Railway detects the Dockerfile automatically
+4. Set **Root directory** to `backend`
+
+### 2b. Set environment variables in Railway
+
+In **Railway → Your Service → Variables**, add every variable below:
+
+| Variable | Value | Notes |
+|---|---|---|
+| `MONGO_URL` | `mongodb+srv://gorakhai-app:<password>@...mongodb.net/gorakhai_cms` | From Atlas step 8 |
+| `DB_NAME` | `gorakhai_cms` | |
+| `JWT_SECRET` | *(your 64-char hex from pre-deploy checklist)* | Never commit this |
+| `ADMIN_EMAIL` | `your-email@gorakhai.com` | Your admin login email |
+| `ADMIN_PASSWORD` | *(your strong password)* | Change immediately after first login |
+| `CORS_ORIGINS` | `https://gorakhai.com,https://www.gorakhai.com` | Must match your Cloudflare domain exactly |
+| `FRONTEND_URL` | `https://gorakhai.com` | |
+| `STORAGE_PROVIDER` | `local` | Change to `r2` when ready for Cloudflare R2 |
+| `UPLOADS_DIR` | `/app/uploads` | |
+| `COOKIE_SECURE` | `true` | **Required for production cross-origin auth** |
+
+> **COOKIE_SECURE=true** is critical. Without it, the admin panel login will not work in production because cookies won't be sent across domains.
+
+### 2c. Configure custom domain on Railway
+
+1. In Railway → **Settings → Domains** → **Add Custom Domain**
+2. Enter: `api.gorakhai.com`
+3. Railway gives you a CNAME record to add to Cloudflare DNS (e.g., `abc.up.railway.app`)
+4. In Cloudflare DNS, add:
+   ```
+   Type: CNAME
+   Name: api
+   Target: abc.up.railway.app
+   Proxy: DNS only (grey cloud) — NOT proxied
+   ```
+   > Use DNS-only for the API subdomain so Railway handles SSL directly.
+
+### 2d. Verify backend is live
+
+```bash
+curl https://api.gorakhai.com/api/
+# Expected: {"message": "Gorakhai CMS API v2"}
 ```
 
 ---
 
-## Part 1: Frontend — Cloudflare Pages
+## Part 3: Frontend on Cloudflare Pages
 
-### Prerequisites
-- A Cloudflare account (free tier)
-- Your GitHub repository connected to Cloudflare Pages
+**Time: 10 minutes**
 
-### Step 1: Create Cloudflare Pages project
+### 3a. Create Cloudflare Pages project
 
-1. Go to **Cloudflare Dashboard → Pages → Create a project**
-2. Connect your GitHub account and select the `gorakhai-corporate` repository
-3. Configure the build settings:
+1. Log into [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. **Workers & Pages → Pages → Create a project → Connect to Git**
+3. Authorise Cloudflare to access your GitHub account
+4. Select repository: `gorakhai-corporate-site`
+
+### 3b. Configure build settings
+
+Use these **exact** values:
 
 | Setting | Value |
 |---|---|
@@ -40,166 +169,158 @@
 | **Framework preset** | Create React App |
 | **Build command** | `cd frontend && yarn install && yarn build` |
 | **Build output directory** | `frontend/build` |
-| **Root directory** | `/` (leave blank) |
+| **Root directory** | *(leave blank)* |
 
-### Step 2: Add environment variables in Cloudflare Pages
+### 3c. Add environment variables in Cloudflare Pages
 
-In **Settings → Environment Variables**, add:
+In **Settings → Environment variables → Production**:
 
-| Variable | Environment | Value |
-|---|---|---|
-| `REACT_APP_BACKEND_URL` | Production | `https://api.gorakhai.com` |
-| `REACT_APP_SUPABASE_URL` | Production | *(optional — Supabase project URL)* |
-| `REACT_APP_SUPABASE_ANON_KEY` | Production | *(optional — Supabase anon key)* |
-| `CI` | Production | `false` |
-| `GENERATE_SOURCEMAP` | Production | `false` |
-
-### Step 3: Custom domain
-
-1. Go to **Pages → gorakhai-corporate → Custom domains**
-2. Add `gorakhai.com` and `www.gorakhai.com`
-3. Cloudflare auto-provisions SSL
-
-### Step 4: GitHub Actions CI/CD (automated deploys)
-
-Add these secrets to your GitHub repository (**Settings → Secrets → Actions**):
-
-| Secret | Where to find |
+| Variable | Value |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare Dashboard → My Profile → API Tokens → Create Token → "Edit Cloudflare Pages" template |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Dashboard → Right sidebar → Account ID |
-| `REACT_APP_BACKEND_URL` | Your production backend URL |
+| `REACT_APP_BACKEND_URL` | `https://api.gorakhai.com` |
+| `CI` | `false` |
+| `GENERATE_SOURCEMAP` | `false` |
 
-Once configured, every push to `main` triggers a deploy automatically.
+> Note: `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_ANON_KEY` are optional and can be left blank until Supabase integration is needed.
 
----
+### 3d. Connect custom domain
 
-## Part 2: Backend — Deployment Options
+1. In Cloudflare Pages → **Custom domains → Set up a custom domain**
+2. Add `gorakhai.com`
+3. Add `www.gorakhai.com` → set to redirect to `gorakhai.com`
+4. Cloudflare auto-provisions SSL certificates
 
-The FastAPI backend requires a persistent server (Cloudflare Pages is static-only).
+### 3e. Force HTTPS
 
-### Option A — Railway (Recommended, easiest)
-
-1. Create account at [railway.app](https://railway.app)
-2. **New Project → Deploy from GitHub** → select your repo
-3. Set **Root directory** to `backend`
-4. Railway auto-detects Python and uses the Dockerfile
-5. Add a **MongoDB** plugin in Railway (or use MongoDB Atlas free tier)
-6. Set environment variables (see ENV_VARS.md)
-7. Configure custom domain: `api.gorakhai.com` → your Railway deployment
-
-### Option B — Render (Free tier available)
-
-1. Create account at [render.com](https://render.com)
-2. **New Web Service → Connect GitHub**
-3. Set **Root directory** to `backend`, **Build command** to `pip install -r requirements.txt`
-4. **Start command**: `uvicorn server:app --host 0.0.0.0 --port 8001`
-5. Add environment variables
-6. Free MongoDB: use [MongoDB Atlas M0 free tier](https://www.mongodb.com/atlas/database)
-
-### Option C — VPS / Docker (Full control)
-
-1. SSH into your server
-2. Clone repository: `git clone https://github.com/your-org/gorakhai-corporate.git`
-3. Copy and configure environment:
-   ```bash
-   cp backend/.env.example backend/.env.production
-   nano backend/.env.production
-   ```
-4. Start services:
-   ```bash
-   docker compose up -d
-   ```
-5. Configure Nginx reverse proxy (see below)
-6. SSL with Certbot: `certbot --nginx -d api.gorakhai.com`
-
-#### Nginx config (api.gorakhai.com)
-```nginx
-server {
-    server_name api.gorakhai.com;
-    
-    location / {
-        proxy_pass http://127.0.0.1:8001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Uploads — increase for media files
-        client_max_body_size 15M;
-    }
-}
-```
+In Cloudflare **SSL/TLS → Overview** → Mode: **Full (strict)**  
+In **SSL/TLS → Edge Certificates** → **Always Use HTTPS**: ON
 
 ---
 
-## Part 3: Production Deployment Checklist
+## Part 4: GitHub Actions CI/CD (Automated Deploys)
 
-### Pre-launch
+After initial setup, every push to `main` triggers an automatic deploy.
 
-- [ ] Backend `.env.production` created from `ENV_VARS.md` — all values set
-- [ ] MongoDB running and accessible from backend
-- [ ] `MONGO_URL` points to production MongoDB
-- [ ] `JWT_SECRET` is a unique 64-char random hex (NOT the dev value)
-  ```bash
-  python3 -c "import secrets; print(secrets.token_hex(32))"
-  ```
-- [ ] `ADMIN_PASSWORD` changed from default `GorakhaiAdmin2026!`
-- [ ] `CORS_ORIGINS` set to exact frontend domain (e.g. `https://gorakhai.com`)
-- [ ] `UPLOADS_DIR` points to a persistent volume (not ephemeral filesystem)
-- [ ] `STORAGE_PROVIDER=local` (or `r2` if Cloudflare R2 configured)
-- [ ] Backend health check passes: `curl https://api.gorakhai.com/api/`
-- [ ] Uploads directory exists and is writable: `ls -la /app/uploads`
+### 4a. Add GitHub Secrets
 
-### DNS (Cloudflare)
+Go to: **GitHub → Your Repo → Settings → Secrets and variables → Actions → New repository secret**
 
-- [ ] `gorakhai.com` A/CNAME → Cloudflare Pages
-- [ ] `www.gorakhai.com` → Cloudflare Pages (redirect to apex)
-- [ ] `api.gorakhai.com` A → backend server IP
-- [ ] SSL active on all domains
+Add these 3 secrets:
+
+| Secret Name | Value | Where to find |
+|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | CF API token | See step 4b below |
+| `CLOUDFLARE_ACCOUNT_ID` | CF Account ID | Cloudflare Dashboard → right sidebar |
+| `REACT_APP_BACKEND_URL` | `https://api.gorakhai.com` | Your backend domain |
+
+### 4b. Create Cloudflare API Token
+
+1. In Cloudflare → **My Profile → API Tokens → Create Token**
+2. Use template: **Edit Cloudflare Pages**
+3. Permissions: `Cloudflare Pages: Edit`
+4. Account Resources: Include your account
+5. Click **Continue to summary → Create Token**
+6. Copy the token immediately (shown only once)
+
+### 4c. Verify CI/CD is working
+
+1. Push a small change to `main` branch
+2. Go to **GitHub → Actions** tab → you should see the workflow running
+3. Once complete, your changes are live at `gorakhai.com`
+
+---
+
+## Part 5: Post-Launch Verification
+
+Run through this checklist after deployment:
+
+### Connectivity
+- [ ] `https://gorakhai.com` loads the homepage
+- [ ] `https://api.gorakhai.com/api/` returns `{"message":"Gorakhai CMS API v2"}`
+- [ ] All public pages load: `/blog`, `/contact`, `/careers`
+
+### Admin CMS
+- [ ] Navigate to `https://gorakhai.com/admin/login`
+- [ ] Log in with your `ADMIN_EMAIL` + `ADMIN_PASSWORD`
+- [ ] Dashboard shows stats cards and recent activity
+- [ ] Create a test blog post with the TipTap editor — set status to Published
+- [ ] View the published post at `https://gorakhai.com/blog`
+- [ ] Upload a cover image — confirm it displays on the blog post
+
+### Forms
+- [ ] Submit the contact form at `/contact` — appears in `/admin/leads`
+- [ ] Subscribe to newsletter — appears in `/admin/newsletter`
 
 ### Security
-
-- [ ] Backend CORS allows only `https://gorakhai.com`
-- [ ] JWT_SECRET is unique and not committed to git
-- [ ] `.env.production` is in `.gitignore`
-- [ ] Admin password changed post-deployment
-- [ ] `uploads/` directory not directly browseable (backend serves via API)
-
-### Post-launch
-
-- [ ] Log in to admin at `https://gorakhai.com/admin` — confirm dashboard loads
-- [ ] Create a test blog post with TipTap editor — publish and view on `/blog`
-- [ ] Upload a cover image — confirm it appears on the post
-- [ ] Submit a contact form — confirm it appears in `/admin/leads`
-- [ ] Subscribe to newsletter — confirm in `/admin/newsletter`
-- [ ] Verify audit logs populate in `/admin/activity-logs`
+- [ ] Change admin password in `/admin/users` after first login
+- [ ] Confirm admin routes return 401 when not logged in:
+  ```bash
+  curl https://api.gorakhai.com/api/admin/stats
+  # Expected: {"detail": "Not authenticated"}
+  ```
 
 ---
 
-## Part 4: Media Storage Migration (Local → Cloudflare R2)
+## Part 6: Media Storage — Important Note
 
-When you're ready to upgrade from local filesystem to R2:
+When using `STORAGE_PROVIDER=local` on Railway, uploaded media files are stored in Railway's ephemeral filesystem. This means:
 
-1. Create an R2 bucket in Cloudflare Dashboard
-2. Create an R2 API token with **Object Read & Write** permissions
-3. Update backend `.env`:
+- **Files survive redeploys** only if Railway has a persistent volume attached
+- On Railway Hobby plan, add a **Volume** in the service settings:
+  - Mount path: `/app/uploads`
+  - Size: 1 GB (sufficient for early stage)
+  - Cost: ~$0.25/GB/month
+
+**Recommended long-term:** Switch to Cloudflare R2 for persistent, CDN-backed media storage. The backend architecture is already built for this — just set `STORAGE_PROVIDER=r2` and add R2 credentials. See `DEPLOYMENT.md Part 7` below.
+
+---
+
+## Part 7: Media Storage Migration to Cloudflare R2 (When Ready)
+
+Cloudflare R2 free tier: **10 GB storage + 1M operations/month**
+
+1. In Cloudflare Dashboard → **R2 Object Storage → Create bucket**
+   - Bucket name: `gorakhai-media`
+2. Go to **R2 → API tokens → Create API token** with `Object Read & Write` on `gorakhai-media`
+3. Update Railway environment variables:
    ```
    STORAGE_PROVIDER=r2
-   R2_ACCOUNT_ID=your_account_id
-   R2_ACCESS_KEY_ID=your_key_id
-   R2_SECRET_ACCESS_KEY=your_secret
+   R2_ACCOUNT_ID=<your cloudflare account id>
+   R2_ACCESS_KEY_ID=<from R2 token>
+   R2_SECRET_ACCESS_KEY=<from R2 token>
    R2_BUCKET_NAME=gorakhai-media
    R2_PUBLIC_URL=https://media.gorakhai.com
    ```
-4. Install boto3: `pip install boto3`
-5. Restart backend — new uploads go to R2 automatically
-6. Migrate existing files:
-   ```bash
-   # Upload existing local files to R2
-   aws s3 sync ./uploads s3://gorakhai-media \
-     --endpoint-url https://<account_id>.r2.cloudflarestorage.com
-   ```
-7. Update `stored_ref` URLs in MongoDB `media` collection (one-time migration script)
+4. In Cloudflare R2 → **gorakhai-media → Settings → Custom Domains** → connect `media.gorakhai.com`
+5. Restart the backend — all new uploads go to R2 automatically
 
-**No application code changes required.** The `StorageProvider` abstraction handles it all.
+> **No code changes required.** The `StorageProvider` abstraction handles the switch.
+
+---
+
+## Rollback
+
+**Frontend:** Cloudflare Pages → Deployments → find previous deploy → **···** → Rollback  
+**Backend:** Railway → Deployments → select previous → Redeploy
+
+---
+
+## Alternative: Render (Free Tier)
+
+If you want to avoid any monthly cost initially, Render has a free tier:
+
+| Feature | Free Tier |
+|---|---|
+| Web Service | 750 hours/month |
+| Cold start | Yes (~30s after 15min inactivity) |
+| Custom domain | Yes |
+| Persistent disk | No (need paid plan for persistence) |
+
+**Setup on Render:**
+1. [render.com](https://render.com) → New Web Service → Connect GitHub
+2. Root directory: `backend`
+3. Build command: `pip install -r requirements.txt`
+4. Start command: `uvicorn server:app --host 0.0.0.0 --port 8001`
+5. Add all environment variables (same as Railway list above)
+
+> **Note:** Free tier has cold starts. First request after inactivity takes ~30 seconds. Not recommended for production but fine for testing.

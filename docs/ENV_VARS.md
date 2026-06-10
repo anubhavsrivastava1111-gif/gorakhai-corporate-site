@@ -20,6 +20,7 @@
 |---|---|---|
 | `STORAGE_PROVIDER` | `local` | Storage backend. Options: `local`, `r2`. |
 | `UPLOADS_DIR` | `/app/backend/uploads` | Local filesystem path for uploaded files. Must be writable. Use a persistent volume in Docker/production. |
+| `COOKIE_SECURE` | `false` | Set to `true` in production. Enables `Secure; SameSite=None` cookies required for cross-origin auth (frontend on gorakhai.com, backend on api.gorakhai.com). |
 
 ### Optional — Cloudflare R2 (only if `STORAGE_PROVIDER=r2`)
 
