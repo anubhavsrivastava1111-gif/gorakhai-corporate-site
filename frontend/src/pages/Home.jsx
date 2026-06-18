@@ -13,23 +13,16 @@ const fadeUp = {
   })
 };
 
-const stats = [
-  { value: '500+', label: 'Enterprise Deployments' },
-  { value: '99.99%', label: 'Platform Uptime SLA' },
-  { value: '2.3s', label: 'Avg. Response Latency' },
-  { value: '50M+', label: 'AI Queries Processed' },
-];
-
 const features = [
   { icon: <GitBranch size={20} />, title: 'Multi-Model Orchestration', desc: 'Intelligently route workloads across GPT-4, Claude, Gemini, and custom models with a single API.' },
-  { icon: <Shield size={20} />, title: 'Enterprise Security', desc: 'SOC 2 Type II certified. HIPAA ready. Data never leaves your infrastructure.' },
+  { icon: <Shield size={20} />, title: 'Security-First Design', desc: 'Built with encryption in transit, workspace isolation, and on-premise deployment options for organizations that need them.' },
   { icon: <Eye size={20} />, title: 'Real-Time Observability', desc: 'Full visibility into every AI interaction. Latency, cost, quality — all in one pane.' },
   { icon: <Zap size={20} />, title: 'Workflow Automation', desc: 'Build complex multi-step AI workflows with a visual builder. No code required.' },
-  { icon: <BarChart3 size={20} />, title: 'Cost Intelligence', desc: 'Automatically minimize inference costs without sacrificing quality. Save 30–50% on AI spend.' },
+  { icon: <BarChart3 size={20} />, title: 'Cost Intelligence', desc: 'Automatically routes each task to the most cost-efficient model available, without sacrificing output quality.' },
   { icon: <Brain size={20} />, title: 'Context Memory', desc: 'Persistent organizational context across every session. Arjun AI learns your business.' },
 ];
 
-const marqueeItems = ['AI Orchestration', 'Enterprise Grade', 'Multi-Model Routing', 'Real-Time Analytics', 'Privacy First', 'SOC 2 Certified', 'On-Premise Deployment', 'API First'];
+const marqueeItems = ['AI Orchestration', 'Enterprise Grade', 'Multi-Model Routing', 'Real-Time Analytics', 'Privacy First', 'On-Premise Deployment', 'API First'];
 
 export default function Home() {
   return (
@@ -95,13 +88,6 @@ export default function Home() {
                 Schedule a Demo
               </Link>
             </motion.div>
-            <motion.p
-              variants={fadeUp}
-              custom={4}
-              className="mt-8 text-xs text-zinc-600"
-            >
-              Trusted by engineering teams at Fortune 500 companies
-            </motion.p>
           </motion.div>
         </div>
       </section>
@@ -117,25 +103,6 @@ export default function Home() {
           ))}
         </div>
       </div>
-
-      {/* STATS */}
-      <section className="py-20 max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-900 border border-zinc-900 rounded-xl overflow-hidden">
-          {stats.map((stat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-[#050505] px-8 py-10 text-center"
-            >
-              <div className="font-heading text-4xl font-bold text-white mb-2">{stat.value}</div>
-              <div className="text-xs text-zinc-500 uppercase tracking-wider">{stat.label}</div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
       {/* PRODUCTS */}
       <section className="py-16 max-w-7xl mx-auto px-6">
@@ -265,7 +232,7 @@ export default function Home() {
               Ready to transform your AI operations?
             </h2>
             <p className="text-zinc-400 mb-8 max-w-xl mx-auto">
-              Join hundreds of enterprise teams already using Gorakhai to orchestrate, automate, and amplify their AI capabilities.
+              See how Gorakhai can bring your AI tools, workflows, and team into one coordinated system.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
