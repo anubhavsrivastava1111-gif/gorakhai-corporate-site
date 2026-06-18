@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Target, Users, Globe, Lightbulb, Lock, Heart } from 'lucide-react';
 import SEOMeta from '@/components/seo/SEOMeta';
-import { TEAM_MEMBERS } from '@/constants/mockData';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -78,13 +77,13 @@ export default function About() {
                 className="space-y-4 text-zinc-400 leading-relaxed"
               >
                 <p>
-                  Gorakhai was founded in 2022 by engineers and researchers who had spent years building AI systems at enterprise scale — and repeatedly encountered the same problems: fragmented deployments, uncontrolled costs, no observability, and no reliable way to coordinate intelligence across an organization.
+                  GorakhAI was founded by Anubhav Srivastava after watching his own businesses struggle from the same root cause: critical decisions made without access to the kind of strategic guidance larger organizations take for granted.
                 </p>
                 <p>
-                  We built Orchestra IQ and Arjun AI to solve these problems definitively. Not with workarounds, but with purpose-built infrastructure designed from the ground up for how enterprise teams actually work.
+                  We built Orchestra IQ and Arjun AI to close that gap — an AI Boardroom, a Time Machine for scenario planning, and an Autopilot for day-to-day execution, designed for how growing businesses actually operate.
                 </p>
                 <p>
-                  Today, our platforms are trusted by hundreds of engineering teams at some of the world's most demanding organizations — from financial institutions to healthcare systems to global retailers.
+                  We're early. The platform is in active development, built in the open with the entrepreneurs and small teams it's meant to serve.
                 </p>
               </motion.div>
             </div>
@@ -131,54 +130,25 @@ export default function About() {
             viewport={{ once: true }}
             className="mb-12"
           >
-            <p className="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-3">Leadership</p>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-white">The team</h2>
+            <p className="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-3">Founder</p>
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-white">Meet the founder</h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {TEAM_MEMBERS.map((member, i) => (
-              <motion.div
-                key={member.id}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="bg-zinc-950 border border-zinc-900 rounded-xl p-6 group hover:border-zinc-700 transition-colors"
-              >
-                <div className="w-12 h-12 bg-[#002FA7]/10 border border-[#002FA7]/20 rounded-lg flex items-center justify-center mb-4">
-                  <span className="font-heading font-bold text-[#002FA7] text-sm">{member.initials}</span>
-                </div>
-                <h3 className="font-heading font-semibold text-white mb-0.5">{member.name}</h3>
-                <p className="text-xs text-zinc-500 mb-3">{member.title}</p>
-                <p className="text-sm text-zinc-400 leading-relaxed">{member.bio}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* NUMBERS */}
-      <section className="py-24 bg-zinc-950/50 border-y border-zinc-900">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {[
-              { value: '2022', label: 'Founded' },
-              { value: '45+', label: 'Team Members' },
-              { value: '500+', label: 'Enterprise Clients' },
-              { value: '$38M', label: 'Series A Raised' },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <div className="font-heading text-4xl font-bold text-white mb-2">{item.value}</div>
-                <div className="text-xs text-zinc-500 uppercase tracking-wider">{item.label}</div>
-              </motion.div>
-            ))}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-zinc-950 border border-zinc-900 rounded-xl p-8 md:p-10 max-w-3xl"
+          >
+            <div className="w-12 h-12 bg-[#002FA7]/10 border border-[#002FA7]/20 rounded-lg flex items-center justify-center mb-4">
+              <span className="font-heading font-bold text-[#002FA7] text-sm">AS</span>
+            </div>
+            <h3 className="font-heading font-semibold text-white mb-0.5">Anubhav Srivastava</h3>
+            <p className="text-xs text-zinc-500 mb-4">Founder, GorakhAI</p>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              GorakhAI is named after Gorakhpur, Uttar Pradesh, the city where Anubhav was born. After two of his own ventures failed — including a restaurant business hit hard by COVID-19 — he realized the problem wasn't effort or vision, but a lack of access to the kind of strategic guidance usually reserved for companies with dedicated in-house teams. That experience became the foundation for GorakhAI: AI-powered tools built to give entrepreneurs and growing businesses better information for the decisions that matter most.
+            </p>
+          </motion.div>
         </div>
       </section>
 
