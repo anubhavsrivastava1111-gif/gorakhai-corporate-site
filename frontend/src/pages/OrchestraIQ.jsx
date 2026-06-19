@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import {
   ArrowRight, Brain, Clock, Zap, Users, GitBranch,
   BookOpen, FileText, Database, CheckSquare, Activity,
-  MessageSquare, Layers
 } from 'lucide-react';
 import SEOMeta from '@/components/seo/SEOMeta';
 
@@ -26,7 +25,7 @@ const fadeUp = {
 const MODULES = [
   {
     id: 'boardroom',
-    icon: <Brain size={18} />,
+    icon: Brain,
     name: 'AI Boardroom',
     group: 'Nerve Suite',
     tagline: 'Every decision, debated from every angle.',
@@ -50,7 +49,7 @@ const MODULES = [
   },
   {
     id: 'timemachine',
-    icon: <Clock size={18} />,
+    icon: Clock,
     name: 'Time Machine',
     group: 'Nerve Suite',
     tagline: 'See where each choice leads, before you take it.',
@@ -74,7 +73,7 @@ const MODULES = [
   },
   {
     id: 'autopilot',
-    icon: <Zap size={18} />,
+    icon: Zap,
     name: 'Autopilot',
     group: 'Nerve Suite',
     tagline: 'Always know the next right move.',
@@ -98,7 +97,7 @@ const MODULES = [
   },
   {
     id: 'executives',
-    icon: <Users size={18} />,
+    icon: Users,
     name: 'Executives & Chat',
     group: 'Executive Layer',
     tagline: 'Your full leadership team, one click away.',
@@ -122,7 +121,7 @@ const MODULES = [
   },
   {
     id: 'flow',
-    icon: <GitBranch size={18} />,
+    icon: GitBranch,
     name: 'Flow',
     group: 'Workflow',
     tagline: 'Route any request through the right chain of experts.',
@@ -146,7 +145,7 @@ const MODULES = [
   },
   {
     id: 'tasks',
-    icon: <CheckSquare size={18} />,
+    icon: CheckSquare,
     name: 'Autonomous Tasks',
     group: 'Automation',
     tagline: 'Queue a task. The entire chain handles it. You approve at the end.',
@@ -170,7 +169,7 @@ const MODULES = [
   },
   {
     id: 'ledger',
-    icon: <BookOpen size={18} />,
+    icon: BookOpen,
     name: 'Ledger',
     group: 'Finance',
     tagline: 'Tell it the transaction. It handles the accounting.',
@@ -194,7 +193,7 @@ const MODULES = [
   },
   {
     id: 'pulse',
-    icon: <Activity size={18} />,
+    icon: Activity,
     name: 'Pulse',
     group: 'Automation',
     tagline: 'Hand off the repetitive work.',
@@ -218,7 +217,7 @@ const MODULES = [
   },
   {
     id: 'studio',
-    icon: <FileText size={18} />,
+    icon: FileText,
     name: 'Studio',
     group: 'Output',
     tagline: 'Turn any output into a polished document, instantly.',
@@ -242,7 +241,7 @@ const MODULES = [
   },
   {
     id: 'data',
-    icon: <Database size={18} />,
+    icon: Database,
     name: 'Data Center',
     group: 'Intelligence',
     tagline: 'One place where your business data lives — and everything else reasons from it.',
@@ -345,6 +344,10 @@ function ScreenshotPlaceholder({ label }) {
   );
 }
 
+function ModuleIcon({ icon: Icon, size }) {
+  return <Icon size={size} />;
+}
+
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 
 export default function OrchestraIQ() {
@@ -424,7 +427,7 @@ export default function OrchestraIQ() {
                   className="group bg-zinc-950 border border-zinc-900 rounded-xl p-4 hover:border-zinc-700 transition-all cursor-pointer no-underline"
                   style={{ textDecoration: 'none' }}
                 >
-                  <div className="mb-3" style={{ color: m.color }}>{m.icon}</div>
+                  <div className="mb-3" style={{ color: m.color }}><ModuleIcon icon={m.icon} size={18} /></div>
                   <div className="text-xs font-bold text-white mb-1 leading-tight">{m.name}</div>
                   <div className="text-[10px] text-zinc-600 leading-relaxed font-mono">{m.group}</div>
                 </motion.a>
@@ -441,7 +444,7 @@ export default function OrchestraIQ() {
             className={`py-24 border-t border-zinc-900 scroll-mt-16 ${idx % 2 === 1 ? 'bg-zinc-950/40' : ''}`}
           >
             <div className="max-w-7xl mx-auto px-6">
-              <div className={`grid grid-cols-1 lg:grid-cols-2 gap-16 items-start ${idx % 2 === 1 ? '' : ''}`}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
 
                 {/* Screenshot — alternates sides */}
                 <motion.div
@@ -458,7 +461,7 @@ export default function OrchestraIQ() {
                       className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold px-2 py-1 rounded"
                       style={{ background: `${mod.color}12`, color: mod.color }}
                     >
-                      {mod.icon}
+                      <ModuleIcon icon={mod.icon} size={14} />
                       <span>{mod.group}</span>
                     </div>
                     <span className="text-[10px] text-zinc-600">orchestriq.gorakhai.com</span>
