@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create uploads directory with correct ownership
-RUN mkdir -p /app/uploads && chown -R app:app /app/uploads
+RUN mkdir -p /app/uploads /app/memory && chown -R app:app /app/uploads /app/memory
 
 USER app
 
