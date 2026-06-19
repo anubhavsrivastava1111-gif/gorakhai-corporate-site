@@ -51,19 +51,19 @@ export default function Products() {
                   <span className="text-xs text-[#002FA7] font-medium">Orchestra IQ</span>
                 </div>
                 <h2 className="font-heading text-3xl md:text-4xl font-bold text-white leading-tight mb-4">
-                  The AI Orchestration Platform
+                  The AI Business Operating System
                 </h2>
                 <p className="text-zinc-400 leading-relaxed mb-6">
-                  Orchestra IQ is the intelligence layer that sits between your applications and your AI models. Route, coordinate, monitor, and optimize — all from a single platform.
+                  Orchestra IQ is an AI-powered business operating system for entrepreneurs and growing businesses. A full executive hierarchy debates your decisions, simulates outcomes, runs autonomous task chains, keeps the books, and exports everything to a polished document — all in one place.
                 </p>
                 <ul className="space-y-3 mb-8">
                   {[
-                    'Multi-model routing with quality scoring',
-                    'Visual workflow builder — no code required',
-                    'Real-time observability dashboard',
-                    'Cost intelligence and auto-optimization',
-                    'Enterprise security and compliance',
-                    'REST and GraphQL APIs'
+                    'AI Boardroom — full C-suite debates your decisions',
+                    'Time Machine — simulate two futures side by side',
+                    'Autopilot — surfaces your six most critical decisions',
+                    'Flow — routes requests through the full executive chain',
+                    'Ledger — double-entry accounting with AI posting',
+                    'Studio — export any output as PDF or PowerPoint'
                   ].map((f) => (
                     <li key={f} className="flex items-start gap-3 text-sm text-zinc-400">
                       <CheckCircle2 size={16} className="text-[#002FA7] mt-0.5 flex-shrink-0" />
@@ -84,33 +84,39 @@ export default function Products() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="bg-zinc-950 border border-zinc-800 rounded-xl p-8 font-mono text-sm"
+                className="bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden"
               >
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="w-3 h-3 rounded-full bg-red-500/60" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/60" />
-                  <span className="ml-2 text-xs text-zinc-600">orchestra-iq-api</span>
+                <div className="h-9 bg-zinc-900 border-b border-zinc-800 flex items-center px-4 gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                  <span className="ml-2 text-xs text-zinc-600 font-mono">orchestriq.gorakhai.com</span>
                 </div>
-                <pre className="text-xs leading-relaxed overflow-x-auto">
-                  <code>{`// Orchestra IQ — Intelligent Routing
-const response = await orchestraIQ.route({
-  query: "Analyze Q3 financial performance",
-  context: { department: "finance", priority: "high" },
-  constraints: {
-    maxCost: 0.02,
-    maxLatency: 2000,
-    models: ["gpt-4", "claude-3", "gemini-pro"]
-  }
-});
-
-// Automatically selected: Claude-3-Opus
-// Reason: Best accuracy for analytical queries
-// Cost: $0.014 | Latency: 1.2s
-console.log(response.model);   // "claude-3-opus"
-console.log(response.content); // "Based on Q3 data..."
-console.log(response.metadata.costSaved); // "$0.006"`}</code>
-                </pre>
+                <div className="p-8">
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {[
+                      { label: 'AI Boardroom', color: '#14B8A6' },
+                      { label: 'Time Machine', color: '#8B5CF6' },
+                      { label: 'Autopilot', color: '#F59E0B' },
+                      { label: 'Flow', color: '#10B981' },
+                      { label: 'Ledger', color: '#F97316' },
+                      { label: 'Studio', color: '#EC4899' },
+                    ].map((m) => (
+                      <div key={m.label} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.color }} />
+                        <span className="text-xs font-medium text-zinc-300">{m.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                    href="https://orchestriq.gorakhai.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-black text-xs font-semibold rounded-md hover:bg-zinc-100 transition-colors w-full justify-center"
+                  >
+                    Open Orchestra IQ — free to start <ArrowRight size={13} />
+                  </a>
+                </div>
               </motion.div>
             </div>
           </div>
