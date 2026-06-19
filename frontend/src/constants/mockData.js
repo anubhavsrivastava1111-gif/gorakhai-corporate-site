@@ -11,7 +11,7 @@ export const BLOG_POSTS = [
     tags: ['Founder Story', 'Entrepreneurship', 'GorakhAI'],
     read_time_mins: 7,
     published_at: '2026-06-01T09:00:00Z',
-    content: `<p>In 2019, I opened a restaurant in Gurugram. I had conviction, I had capital, and I had a clear vision of what the experience should feel like. What I did not have was a CFO who could model the margin implications of my menu pricing. I did not have a COO who could design a kitchen workflow that would hold under peak pressure. I did not have a strategist who could stress-test my assumptions about footfall and average order value before I signed an expensive lease.</p>
+    content: `<p>In 2019, I opened a restaurant in Delhi. I had conviction, I had capital, and I had a clear vision of what the experience should feel like. What I did not have was a CFO who could model the margin implications of my menu pricing. I did not have a COO who could design a kitchen workflow that would hold under peak pressure. I did not have a strategist who could stress-test my assumptions about footfall and average order value before I signed an expensive lease.</p>
     <p>COVID made the restaurant unsustainable. But if I am honest with myself, several of the decisions that made the business fragile were made months before the pandemic arrived. They were made in the absence of the kind of structured, multi-perspective input that larger organisations get as a matter of course.</p>
     <h2>The real problem is access, not effort</h2>
     <p>Most entrepreneurs I know are not failing because they do not work hard enough. They are failing — or underperforming — because they are making critical decisions with incomplete information and no one to pressure-test their thinking before they commit.</p>
