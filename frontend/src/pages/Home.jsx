@@ -132,22 +132,32 @@ export default function Home() {
               </div>
               <h3 className="font-heading text-2xl font-bold text-white mb-3">Orchestra IQ</h3>
               <p className="text-zinc-400 text-sm leading-relaxed mb-6">
-                The AI orchestration platform that coordinates multiple models, routes intelligently, and gives you complete visibility into every AI operation across your enterprise.
+                An AI-powered business operating system with a full executive hierarchy, scenario simulation, autonomous task chains, integrated accounting, and intelligent document export. Built for entrepreneurs and growing businesses.
               </p>
               <ul className="space-y-2 mb-8">
-                {['Multi-model routing', 'Workflow automation', 'Real-time observability', 'Cost optimization'].map((f) => (
+                {['AI Boardroom & executive hierarchy', 'Time Machine scenario simulation', 'Autonomous task chains', 'Integrated double-entry Ledger'].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-zinc-400">
                     <span className="w-1 h-1 bg-[#002FA7] rounded-full" />
                     {f}
                   </li>
                 ))}
               </ul>
-              <Link
-                to="/products/orchestra-iq"
-                className="inline-flex items-center gap-2 text-sm text-white font-medium group-hover:gap-3 transition-all"
-              >
-                Explore Orchestra IQ <ArrowRight size={14} />
-              </Link>
+              <div className="flex flex-col gap-3">
+                <Link
+                  to="/products/orchestra-iq"
+                  className="inline-flex items-center gap-2 text-sm text-white font-medium group-hover:gap-3 transition-all"
+                >
+                  See all features <ArrowRight size={14} />
+                </Link>
+                
+                  href="https://orchestriq.gorakhai.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-xs text-[#002FA7] hover:underline"
+                >
+                  Open live app <ArrowRight size={12} />
+                </a>
+              </div>
             </div>
           </motion.div>
 
