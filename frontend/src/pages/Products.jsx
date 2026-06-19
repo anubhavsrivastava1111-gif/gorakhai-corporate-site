@@ -121,7 +121,7 @@ export default function Products() {
                       <span className="text-xs font-medium text-zinc-300">Studio</span>
                     </div>
                   </div>
-                  
+                  <a
                     href="https://orchestriq.gorakhai.com"
                     target="_blank"
                     rel="noopener noreferrer"
