@@ -81,16 +81,6 @@ export default function NewsletterForm({ variant = 'default' }) {
             {error}
           </motion.p>
         )}
-        {status === 'error' && (
-          <motion.p
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mt-2 text-xs text-red-400"
-          >
-            {error}
-          </motion.p>
-        )}
       </AnimatePresence>
     </form>
   );
