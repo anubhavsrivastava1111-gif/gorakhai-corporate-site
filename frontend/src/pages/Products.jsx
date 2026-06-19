@@ -16,6 +16,7 @@ export default function Products() {
     <>
       <SEOMeta title="Products" description="Orchestra IQ and Arjun AI — purpose-built AI platforms for the modern enterprise." canonicalPath="/products" />
     <div className="bg-[#050505] text-white">
+
       {/* HERO */}
       <section className="py-32 max-w-7xl mx-auto px-6">
         <motion.div initial="hidden" animate="visible" className="max-w-3xl">
@@ -79,6 +80,7 @@ export default function Products() {
                 </Link>
               </motion.div>
             </div>
+
             <div className="md:col-span-7">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -94,19 +96,30 @@ export default function Products() {
                 </div>
                 <div className="p-8">
                   <div className="grid grid-cols-2 gap-3 mb-6">
-                    {[
-                      { label: 'AI Boardroom', color: '#14B8A6' },
-                      { label: 'Time Machine', color: '#8B5CF6' },
-                      { label: 'Autopilot', color: '#F59E0B' },
-                      { label: 'Flow', color: '#10B981' },
-                      { label: 'Ledger', color: '#F97316' },
-                      { label: 'Studio', color: '#EC4899' },
-                    ].map((m) => (
-                      <div key={m.label} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
-                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.color }} />
-                        <span className="text-xs font-medium text-zinc-300">{m.label}</span>
-                      </div>
-                    ))}
+                    <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#14B8A6]" />
+                      <span className="text-xs font-medium text-zinc-300">AI Boardroom</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
+                      <span className="text-xs font-medium text-zinc-300">Time Machine</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                      <span className="text-xs font-medium text-zinc-300">Autopilot</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                      <span className="text-xs font-medium text-zinc-300">Flow</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#F97316]" />
+                      <span className="text-xs font-medium text-zinc-300">Ledger</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#EC4899]" />
+                      <span className="text-xs font-medium text-zinc-300">Studio</span>
+                    </div>
                   </div>
                   
                     href="https://orchestriq.gorakhai.com"
@@ -260,6 +273,7 @@ export default function Products() {
           </Link>
         </motion.div>
       </section>
+
     </div>
     </>
   );
