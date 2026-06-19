@@ -149,7 +149,7 @@ export default function Home() {
                 >
                   See all features <ArrowRight size={14} />
                 </Link>
-                
+                  <a
                   href="https://orchestriq.gorakhai.com"
                   target="_blank"
                   rel="noopener noreferrer"
