@@ -155,7 +155,7 @@ export default function Blog() {
       <section className="py-16 border-t border-zinc-900">
         <div className="max-w-2xl mx-auto px-6 text-center">
           <h3 className="font-heading text-xl font-semibold text-white mb-2">Never miss an insight</h3>
-          <p className="text-sm text-zinc-500 mb-6">Join 3,000+ enterprise AI practitioners. New articles every week.</p>
+          <p className="text-sm text-zinc-500 mb-6">Insights on AI, decision-making, and building businesses — from the GorakhAI team.</p>
           <NewsletterForm />
         </div>
       </section>
