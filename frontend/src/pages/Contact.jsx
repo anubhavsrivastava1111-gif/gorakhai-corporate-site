@@ -190,8 +190,8 @@ export default function Contact() {
                 <div className="flex items-start gap-3">
                   <MapPin size={16} className="text-zinc-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-xs text-zinc-600 mb-0.5">Headquarters</div>
-                    <div className="text-sm text-zinc-300">548 Market St, Suite 29000<br />San Francisco, CA 94104</div>
+                    <div className="text-xs text-zinc-600 mb-0.5">Based In</div>
+                    <div className="text-sm text-zinc-300">India · Serving Globally</div>
                   </div>
                 </div>
               </div>
