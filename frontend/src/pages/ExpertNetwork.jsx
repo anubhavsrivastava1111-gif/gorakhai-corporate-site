@@ -61,10 +61,10 @@ export default function ExpertNetwork() {
     setStatus('loading');
     try {
       await submitForm('expert_network_registrations', {
-        name: form.name,
+        full_name: form.name,
         email: form.email,
         organization: form.company,
-        expertise_areas: form.expertise.join(', '),
+        expertise_areas: form.expertise,
         years_experience: form.yearsExp,
         linkedin_url: form.linkedin,
         bio: form.bio,
