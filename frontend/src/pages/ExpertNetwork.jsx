@@ -61,15 +61,14 @@ export default function ExpertNetwork() {
     setStatus('loading');
     try {
       await submitForm('expert_network_registrations', {
-        full_name: form.name,
+        name: form.name,
         email: form.email,
-        company: form.company,
-        expertise_areas: form.expertise,
+        organization: form.company,
+        expertise_areas: form.expertise.join(', '),
         years_experience: form.yearsExp,
         linkedin_url: form.linkedin,
         bio: form.bio,
-        availability: form.availability,
-        created_at: new Date().toISOString()
+        availability: form.availability
       });
       setStatus('success');
     } catch (err) { setStatus('error'); setSubmitErr(err.message || 'Something went wrong. Please try again.'); }
