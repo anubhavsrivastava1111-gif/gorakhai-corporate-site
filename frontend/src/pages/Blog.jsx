@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Clock, Calendar } from 'lucide-react';
-import { BLOG_POSTS, BLOG_CATEGORIES } from '@/constants/mockData';
+import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { BLOG } from '@/constants/testIds';
 import NewsletterForm from '@/components/sections/NewsletterForm';
 
@@ -14,12 +14,15 @@ export default function Blog() {
   useEffect(() => { document.title = 'Blog — Gorakhai'; }, []);
 
   const [activeCategory, setActiveCategory] = useState('All');
+  const { posts: BLOG_POSTS, loading } = useBlogPosts({ limit: 20 });
+
+  const BLOG_CATEGORIES = ['All', ...Array.from(new Set((BLOG_POSTS || []).map(p => p.category).filter(Boolean)))];
 
   const filtered = activeCategory === 'All'
-    ? BLOG_POSTS
-    : BLOG_POSTS.filter(p => p.category === activeCategory);
+    ? (BLOG_POSTS || [])
+    : (BLOG_POSTS || []).filter(p => p.category === activeCategory);
 
-  const featured = BLOG_POSTS[0];
+  const featured = filtered[0];
   const rest = filtered.slice(activeCategory === 'All' ? 1 : 0);
 
   return (
