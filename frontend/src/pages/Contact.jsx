@@ -30,14 +30,12 @@ export default function Contact() {
     setStatus('loading');
     try {
       await submitForm('contact_submissions', {
-        full_name: form.name,
+        name: form.name,
         email: form.email,
         company: form.company,
-        job_title: form.jobTitle,
-        product_interest: form.interest,
+        subject: form.interest || 'General Inquiry',
         message: form.message,
-        form_source: 'contact',
-        created_at: new Date().toISOString()
+        source: 'contact_form'
       });
       setStatus('success');
     } catch (err) {
