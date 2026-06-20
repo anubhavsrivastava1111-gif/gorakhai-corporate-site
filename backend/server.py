@@ -22,6 +22,7 @@ from routes.admin_routes import router as admin_router
 from routes.public_routes import router as public_router
 from routes.media_routes import admin_router as media_admin_router
 from routes.media_routes import public_router as media_public_router
+from routes.news_routes import router as news_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -77,6 +78,7 @@ app.include_router(admin_router)
 app.include_router(public_router)
 app.include_router(media_admin_router)
 app.include_router(media_public_router)
+app.include_router(news_router)
 
 # CORS — must list explicit origins when credentials=True
 _cors_origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")]
