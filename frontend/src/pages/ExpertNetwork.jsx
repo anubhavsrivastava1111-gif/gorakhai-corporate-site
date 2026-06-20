@@ -60,15 +60,18 @@ export default function ExpertNetwork() {
     setErrors({});
     setStatus('loading');
     try {
+      const nameParts = form.name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
       await submitForm('expert_network_registrations', {
-        full_name: form.name,
+        first_name: firstName,
+        last_name: lastName,
         email: form.email,
-        organization: form.company,
+        phone: '',
         expertise_areas: form.expertise,
-        years_experience: form.yearsExp,
+        years_of_experience: form.yearsExp,
         linkedin_url: form.linkedin,
-        bio: form.bio,
-        availability: form.availability
+        bio: form.bio
       });
       setStatus('success');
     } catch (err) { setStatus('error'); setSubmitErr(err.message || 'Something went wrong. Please try again.'); }
