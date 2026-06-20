@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Mail, Phone, MapPin, ArrowRight, Linkedin, Twitter } from 'lucide-react';
+import { CheckCircle2, Mail, MapPin, ArrowRight, Linkedin, Twitter } from 'lucide-react';
 import { submitForm } from '@/lib/supabaseClient';
 import SEOMeta from '@/components/seo/SEOMeta';
 import { CONTACT } from '@/constants/testIds';
