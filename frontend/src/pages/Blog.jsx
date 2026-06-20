@@ -22,6 +22,8 @@ export default function Blog() {
     ? (BLOG_POSTS || [])
     : (BLOG_POSTS || []).filter(p => p.category === activeCategory);
 
+  if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="w-8 h-8 border-2 border-[#002FA7] border-t-transparent rounded-full animate-spin" /></div>;
+
   const featured = filtered[0];
   const rest = filtered.slice(activeCategory === 'All' ? 1 : 0);
 
