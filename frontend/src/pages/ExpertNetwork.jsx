@@ -69,7 +69,7 @@ export default function ExpertNetwork() {
         email: form.email,
         phone: '',
         expertise_areas: form.expertise,
-        years_of_experience: form.yearsExp,
+        years_of_experience: form.yearsExp === '10+ years' ? 10 : form.yearsExp === '5-10 years' ? 5 : form.yearsExp === '3-5 years' ? 3 : form.yearsExp === '1-3 years' ? 1 : 0,
         linkedin_url: form.linkedin,
         bio: form.bio
       });
