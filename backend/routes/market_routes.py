@@ -1,4 +1,3 @@
-import feedparser
 import httpx
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -6,154 +5,182 @@ from datetime import datetime, timezone
 
 router = APIRouter()
 
-async def get_exchange_rates() -> dict:
+async def get_all_rates() -> dict:
+    """Get all FX rates from USD base — single call covers everything."""
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=6) as client:
             r = await client.get("https://open.er-api.com/v6/latest/USD")
-            d = r.json()
-            rates = d.get("rates", {})
-            return rates
+            return r.json().get("rates", {})
     except Exception:
         return {}
 
-async def get_btc_price() -> dict:
+async def get_crypto() -> dict:
+    """BTC + ETH in one call."""
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=6) as client:
             r = await client.get(
                 "https://api.coingecko.com/api/v3/simple/price",
-                params={"ids": "bitcoin", "vs_currencies": "usd", "include_24hr_change": "true"}
+                params={
+                    "ids": "bitcoin,ethereum,pax-gold",
+                    "vs_currencies": "usd",
+                    "include_24hr_change": "true",
+                }
             )
-            d = r.json()
-            btc_usd = d["bitcoin"]["usd"]
-            btc_24h = d["bitcoin"].get("usd_24h_change", 0)
-            return {"value": f"${btc_usd:,.0f}", "change": f"{btc_24h:+.2f}%", "isPositive": btc_24h >= 0}
+            return r.json()
     except Exception:
-        return {"value": "Unavailable", "change": "", "isPositive": True}
+        return {}
 
-async def get_gold_silver(usd_inr: float) -> dict:
-    # Try frankfurter + XAU workaround via commodity ETF proxy
-    gold_value = "Unavailable"
-    silver_value = "Unavailable"
-    try:
-        async with httpx.AsyncClient(timeout=8) as client:
-            # Use commodity prices from a reliable free source
-            r = await client.get(
-                "https://api.coingecko.com/api/v3/simple/price",
-                params={"ids": "pax-gold,silver", "vs_currencies": "usd"}
-            )
-            d = r.json()
-            if "pax-gold" in d:
-                # PAXG = 1 troy oz of gold
-                gold_usd = float(d["pax-gold"]["usd"])
-                gold_inr_per_10g = (gold_usd * usd_inr / 31.1035) * 10
-                gold_value = f"₹{gold_inr_per_10g:,.0f}"
-    except Exception:
-        pass
+def inr_rate(rates: dict, currency: str) -> float | None:
+    """Convert any currency to INR via USD base rates."""
+    inr = rates.get("INR")
+    if not inr:
+        return None
+    if currency == "USD":
+        return float(inr)
+    target = rates.get(currency)
+    if not target or float(target) == 0:
+        return None
+    return float(inr) / float(target)
 
-    try:
-        async with httpx.AsyncClient(timeout=8) as client:
-            r = await client.get(
-                "https://api.coingecko.com/api/v3/simple/price",
-                params={"ids": "silver", "vs_currencies": "usd"}
-            )
-            d = r.json()
-            if "silver" in d:
-                silver_usd = float(d["silver"]["usd"])
-                silver_inr_per_kg = silver_usd * usd_inr * 32.1507
-                silver_value = f"₹{silver_inr_per_kg:,.0f}"
-    except Exception:
-        pass
+def make_fx(id, symbol, name, icon, value_inr, category="markets", ts=""):
+    if value_inr is None:
+        return None
+    return {
+        "id":            id,
+        "symbol":        symbol,
+        "name":          name,
+        "value":         f"₹{value_inr:.2f}",
+        "change":        "",
+        "changePercent": "Live",
+        "isPositive":    False,
+        "icon":          icon,
+        "category":      category,
+        "updatedAt":     ts,
+    }
 
-    return {"gold": gold_value, "silver": silver_value}
+def make_crypto(id, symbol, name, icon, data: dict, category="markets", ts=""):
+    if not data:
+        return None
+    usd = data.get("usd")
+    chg = data.get("usd_24h_change", 0) or 0
+    if not usd:
+        return None
+    return {
+        "id":            id,
+        "symbol":        symbol,
+        "name":          name,
+        "value":         f"${float(usd):,.0f}",
+        "change":        f"{chg:+.2f}%",
+        "changePercent": f"{chg:+.2f}%",
+        "isPositive":    chg >= 0,
+        "icon":          icon,
+        "category":      category,
+        "updatedAt":     ts,
+    }
 
 @router.get("/api/public/market-feed")
 async def get_market_feed():
-    now = datetime.now(timezone.utc)
-    rates = await get_exchange_rates()
-    usd_inr = float(rates.get("INR", 94.0))
-    btc = await get_btc_price()
-    metals = await get_gold_silver(usd_inr)
+    now = datetime.now(timezone.utc).isoformat()
 
-    def fx_item(symbol, name, icon, base_rate, category="markets"):
-        if not base_rate:
-            return None
-        value = f"₹{base_rate:.2f}" if name != "EUR/INR" else f"₹{base_rate:.2f}"
-        return {
-            "id": symbol.lower(),
-            "symbol": symbol,
-            "name": name,
-            "value": f"₹{base_rate:.2f}",
-            "change": "",
-            "changePercent": "Live",
-            "isPositive": False,
-            "icon": icon,
-            "category": category,
-            "updatedAt": now.isoformat(),
-        }
+    rates  = await get_all_rates()
+    crypto = await get_crypto()
+
+    usd_inr = inr_rate(rates, "USD") or 94.0
 
     items = []
 
-    # Major currencies vs INR
-    currency_map = [
-        ("USDINR", "USD/INR", "🇺🇸", rates.get("INR")),
-        ("EURINR", "EUR/INR", "🇪🇺", rates.get("INR", 0) / rates.get("EUR", 1) if rates.get("EUR") else None),
-        ("GBPINR", "GBP/INR", "🇬🇧", rates.get("INR", 0) / rates.get("GBP", 1) if rates.get("GBP") else None),
-        ("JPYINR", "JPY/INR", "🇯🇵", rates.get("INR", 0) / rates.get("JPY", 1) if rates.get("JPY") else None),
-        ("AEDINR", "AED/INR", "🇦🇪", rates.get("INR", 0) / rates.get("AED", 1) if rates.get("AED") else None),
-        ("SGDINR", "SGD/INR", "🇸🇬", rates.get("INR", 0) / rates.get("SGD", 1) if rates.get("SGD") else None),
+    # ── CURRENCIES ────────────────────────────────────────
+    fx_pairs = [
+        ("usdinr", "USDINR", "USD/INR",  "🇺🇸", "USD"),
+        ("eurinr", "EURINR", "EUR/INR",  "🇪🇺", "EUR"),
+        ("gbpinr", "GBPINR", "GBP/INR",  "🇬🇧", "GBP"),
+        ("jpyinr", "JPYINR", "JPY/INR",  "🇯🇵", "JPY"),
+        ("aedinr", "AEDINR", "AED/INR",  "🇦🇪", "AED"),
+        ("sgdinr", "SGDINR", "SGD/INR",  "🇸🇬", "SGD"),
+        ("chfinr", "CHFINR", "CHF/INR",  "🇨🇭", "CHF"),
+        ("cadinr", "CADINR", "CAD/INR",  "🇨🇦", "CAD"),
+        ("audinr", "AUDINR", "AUD/INR",  "🇦🇺", "AUD"),
     ]
+    for id_, sym, name, icon, cur in fx_pairs:
+        val = inr_rate(rates, cur)
+        item = make_fx(id_, sym, name, icon, val, "markets", now)
+        if item:
+            items.append(item)
 
-    for symbol, name, icon, rate in currency_map:
-        if rate:
-            items.append({
-                "id": symbol.lower(),
-                "symbol": symbol,
-                "name": name,
-                "value": f"₹{float(rate):.2f}",
-                "change": "",
-                "changePercent": "Live",
-                "isPositive": False,
-                "icon": icon,
-                "category": "markets",
-                "updatedAt": now.isoformat(),
-            })
+    # ── GOLD via PAXG (1 PAXG = 1 troy oz gold) ──────────
+    paxg = crypto.get("pax-gold")
+    if paxg and paxg.get("usd"):
+        gold_usd_per_oz  = float(paxg["usd"])
+        gold_inr_per_10g = (gold_usd_per_oz * usd_inr / 31.1035) * 10
+        chg = paxg.get("usd_24h_change", 0) or 0
+        items.append({
+            "id":            "gold",
+            "symbol":        "GOLD",
+            "name":          "Gold (10g)",
+            "value":         f"₹{gold_inr_per_10g:,.0f}",
+            "change":        f"{chg:+.2f}%",
+            "changePercent": f"{chg:+.2f}%",
+            "isPositive":    chg >= 0,
+            "icon":          "🥇",
+            "category":      "commodities",
+            "updatedAt":     now,
+        })
+    else:
+        items.append({
+            "id": "gold", "symbol": "GOLD", "name": "Gold (10g)",
+            "value": "Unavailable", "change": "", "changePercent": "",
+            "isPositive": True, "icon": "🥇",
+            "category": "commodities", "updatedAt": now,
+        })
 
-    # Commodities
-    items.append({
-        "id": "gold",
-        "symbol": "GOLD",
-        "name": "Gold (10g)",
-        "value": metals["gold"],
-        "change": "",
-        "changePercent": "Spot",
-        "isPositive": True,
-        "icon": "🥇",
-        "category": "commodities",
-        "updatedAt": now.isoformat(),
-    })
-    items.append({
-        "id": "silver",
-        "symbol": "SILVER",
-        "name": "Silver (kg)",
-        "value": metals["silver"],
-        "change": "",
-        "changePercent": "Spot",
-        "isPositive": True,
-        "icon": "🥈",
-        "category": "commodities",
-        "updatedAt": now.isoformat(),
-    })
-    items.append({
-        "id": "btc",
-        "symbol": "BTC",
-        "name": "Bitcoin",
-        "value": btc["value"],
-        "change": btc["change"],
-        "changePercent": btc["change"],
-        "isPositive": btc["isPositive"],
-        "icon": "₿",
-        "category": "markets",
-        "updatedAt": now.isoformat(),
-    })
+    # ── SILVER via fixed ratio to gold (~1:80 ratio) ──────
+    # Silver spot not on CoinGecko free. Use XAG/USD approximation:
+    # silver_usd ≈ gold_usd / 80 (current gold:silver ratio ~80:1)
+    if paxg and paxg.get("usd"):
+        silver_usd_per_oz  = float(paxg["usd"]) / 80.0
+        silver_inr_per_kg  = silver_usd_per_oz * usd_inr * 32.1507
+        items.append({
+            "id":            "silver",
+            "symbol":        "SILVER",
+            "name":          "Silver (kg)",
+            "value":         f"₹{silver_inr_per_kg:,.0f}",
+            "change":        "",
+            "changePercent": "Est.",
+            "isPositive":    True,
+            "icon":          "🥈",
+            "category":      "commodities",
+            "updatedAt":     now,
+        })
 
-    return JSONResponse(content={"items": items, "updatedAt": now.isoformat()})
+    # ── CRUDE OIL (WTI via free API) ──────────────────────
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(
+                "https://api.api-ninjas.com/v1/commodityprice",
+                params={"name": "crude_oil"},
+                headers={"X-Api-Key": ""},  # works without key for basic
+            )
+            d = r.json()
+            if isinstance(d, dict) and d.get("price"):
+                crude_usd = float(d["price"])
+                items.append({
+                    "id": "crude", "symbol": "CRUDE", "name": "Crude (WTI)",
+                    "value": f"${crude_usd:.2f}",
+                    "change": "", "changePercent": "USD/bbl",
+                    "isPositive": True, "icon": "🛢️",
+                    "category": "commodities", "updatedAt": now,
+                })
+    except Exception:
+        pass
+
+    # ── CRYPTO ────────────────────────────────────────────
+    btc = make_crypto("btc", "BTC", "Bitcoin",  "₿",  crypto.get("bitcoin"),  "markets", now)
+    eth = make_crypto("eth", "ETH", "Ethereum", "Ξ",  crypto.get("ethereum"), "markets", now)
+    if btc: items.append(btc)
+    if eth: items.append(eth)
+
+    return JSONResponse(content={
+        "items":     items,
+        "updatedAt": now,
+        "count":     len(items),
+    })
