@@ -17,55 +17,24 @@ async def get_usd_inr() -> float:
         return 94.0
 
 async def get_metals_prices(usd_inr: float) -> dict:
-    """Get gold and silver prices via CoinGecko (free, no key needed)"""
+    """Get gold and silver prices via metals.live (free, no key needed)"""
     gold_value = "Unavailable"
     silver_value = "Unavailable"
     try:
         async with httpx.AsyncClient(timeout=8) as client:
-            r = await client.get(
-                "https://api.coingecko.com/api/v3/simple/price",
-                params={
-                    "ids": "gold,silver",
-                    "vs_currencies": "usd"
-                }
-            )
-            d = r.json()
-            # Gold: CoinGecko returns price per troy ounce in USD
-            # Convert to INR per 10g
-            if "gold" in d:
-                gold_usd_per_oz = float(d["gold"]["usd"])
-                gold_inr_per_oz = gold_usd_per_oz * usd_inr
-                gold_inr_per_10g = (gold_inr_per_oz / 31.1035) * 10
-                gold_value = f"₹{gold_inr_per_10g:,.0f}"
-            # Silver: convert to INR per kg
-            if "silver" in d:
-                silver_usd_per_oz = float(d["silver"]["usd"])
-                silver_inr_per_oz = silver_usd_per_oz * usd_inr
-                silver_inr_per_kg = silver_inr_per_oz * 32.1507
-                silver_value = f"₹{silver_inr_per_kg:,.0f}"
+            r = await client.get("https://api.metals.live/v1/spot")
+            metals = r.json()
+            for m in metals:
+                if m.get("gold") and gold_value == "Unavailable":
+                    gold_usd = float(m["gold"])
+                    gold_inr_per_10g = (gold_usd * usd_inr / 31.1035) * 10
+                    gold_value = f"₹{gold_inr_per_10g:,.0f}"
+                if m.get("silver") and silver_value == "Unavailable":
+                    silver_usd = float(m["silver"])
+                    silver_inr_per_kg = silver_usd * usd_inr * 32.1507
+                    silver_value = f"₹{silver_inr_per_kg:,.0f}"
     except Exception:
         pass
-
-    # Fallback: try metals-api alternative
-    if gold_value == "Unavailable":
-        try:
-            async with httpx.AsyncClient(timeout=8) as client:
-                r = await client.get(
-                    "https://api.metals.live/v1/spot",
-                )
-                metals = r.json()
-                for m in metals:
-                    if m.get("gold"):
-                        gold_usd = float(m["gold"])
-                        gold_inr_per_10g = (gold_usd * usd_inr / 31.1035) * 10
-                        gold_value = f"₹{gold_inr_per_10g:,.0f}"
-                    if m.get("silver"):
-                        silver_usd = float(m["silver"])
-                        silver_inr_per_kg = silver_usd * usd_inr * 32.1507
-                        silver_value = f"₹{silver_inr_per_kg:,.0f}"
-        except Exception:
-            pass
-
     return {"gold": gold_value, "silver": silver_value}
 
 async def get_btc_price() -> dict:
