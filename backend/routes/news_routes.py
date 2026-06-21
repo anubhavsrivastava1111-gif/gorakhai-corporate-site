@@ -3,16 +3,26 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
 import hashlib
+import time
 
 router = APIRouter()
 
 RSS_FEEDS = [
+    # India Business & Economy
     {"url": "https://economictimes.indiatimes.com/rssfeedsdefault.cms", "category": "india"},
+    {"url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms", "category": "markets"},
     {"url": "https://www.livemint.com/rss/news", "category": "business"},
-    {"url": "https://feeds.feedburner.com/ndtvnews-business", "category": "business"},
-    {"url": "https://feeds.feedburner.com/TechCrunch", "category": "ai"},
-    {"url": "https://www.thehindu.com/business/Economy/feeder/default.rss", "category": "india"},
-    {"url": "http://feeds.reuters.com/reuters/businessNews", "category": "world"},
+    {"url": "https://www.business-standard.com/rss/home_page_top_stories.rss", "category": "business"},
+    # World News
+    {"url": "https://feeds.bbci.co.uk/news/world/rss.xml", "category": "world"},
+    {"url": "https://feeds.bbci.co.uk/news/business/rss.xml", "category": "business"},
+    {"url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", "category": "world"},
+    # AI & Tech
+    {"url": "https://techcrunch.com/feed/", "category": "ai"},
+    {"url": "https://feeds.feedburner.com/venturebeat/SZYF", "category": "ai"},
+    {"url": "https://www.wired.com/feed/category/business/latest/rss", "category": "business"},
+    # Trade & Commodities
+    {"url": "https://feeds.bbci.co.uk/news/business/economy/rss.xml", "category": "world"},
 ]
 
 CATEGORY_ICONS = {
@@ -24,24 +34,26 @@ CATEGORY_ICONS = {
 }
 
 def score_impact(title: str) -> str:
-    title_lower = title.lower()
-    critical_kw = ["crash", "collapse", "emergency", "ban", "war", "crisis", "sanction", "recession"]
-    high_kw = ["rate", "rbi", "fed", "gdp", "inflation", "budget", "merger", "acquisition", "ipo"]
-    medium_kw = ["growth", "launch", "report", "forecast", "data", "quarter", "revenue"]
-    if any(k in title_lower for k in critical_kw): return "critical"
-    if any(k in title_lower for k in high_kw):     return "high"
-    if any(k in title_lower for k in medium_kw):   return "medium"
+    t = title.lower()
+    if any(k in t for k in ["crash", "collapse", "war", "crisis", "ban", "sanction", "emergency", "recession", "default"]): return "critical"
+    if any(k in t for k in ["rbi", "fed", "rate", "gdp", "inflation", "budget", "merger", "ipo", "acquisition", "tariff", "trade"]): return "high"
+    if any(k in t for k in ["growth", "launch", "forecast", "quarter", "revenue", "ai", "openai", "google", "microsoft"]): return "medium"
     return "low"
 
-def dedupe(items: list) -> list:
-    seen = set()
-    result = []
-    for item in items:
-        key = hashlib.md5(item["headline"][:60].lower().encode()).hexdigest()
-        if key not in seen:
-            seen.add(key)
-            result.append(item)
-    return result
+def parse_date(entry) -> str:
+    try:
+        if entry.get("published_parsed"):
+            ts = time.mktime(entry.published_parsed)
+            return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+    except Exception:
+        pass
+    return datetime.now(timezone.utc).isoformat()
+
+def jaccard(a: str, b: str) -> float:
+    sa = set(a.lower().split())
+    sb = set(b.lower().split())
+    if not sa or not sb: return 0
+    return len(sa & sb) / len(sa | sb)
 
 @router.get("/api/public/news-feed")
 async def get_news_feed():
@@ -49,31 +61,22 @@ async def get_news_feed():
     for feed_cfg in RSS_FEEDS:
         try:
             feed = feedparser.parse(feed_cfg["url"])
-            for entry in feed.entries[:3]:
-                title = entry.get("title", "").strip()
-                summary = entry.get("summary", entry.get("description", "")).strip()
-                published = entry.get("published", entry.get("updated", ""))
-                if not title:
+            for entry in feed.entries[:4]:
+                title = (entry.get("title") or "").strip()
+                if not title or len(title) < 10:
                     continue
-                # Parse published date
-                try:
-                    if entry.get("published_parsed"):
-                        import time
-                        ts = time.mktime(entry.published_parsed)
-                        pub_iso = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
-                    else:
-                        pub_iso = datetime.now(timezone.utc).isoformat()
-                except Exception:
-                    pub_iso = datetime.now(timezone.utc).isoformat()
-
+                summary = (entry.get("summary") or entry.get("description") or "").strip()
+                # Strip HTML tags from summary
+                import re
+                summary = re.sub(r'<[^>]+>', '', summary)[:300]
                 cat = feed_cfg["category"]
                 items.append({
                     "id": hashlib.md5(title.encode()).hexdigest()[:12],
                     "category": cat,
                     "headline": title,
-                    "summary": summary[:300] if summary else title,
-                    "source": feed.feed.get("title", "News"),
-                    "publishedAt": pub_iso,
+                    "summary": summary or title,
+                    "source": (feed.feed.get("title") or "News").strip(),
+                    "publishedAt": parse_date(entry),
                     "impact": score_impact(title),
                     "icon": CATEGORY_ICONS.get(cat, "📰"),
                     "aiAnalysis": None,
@@ -85,6 +88,18 @@ async def get_news_feed():
         except Exception:
             continue
 
+    # Sort by date
     items.sort(key=lambda x: x["publishedAt"], reverse=True)
-    items = dedupe(items)[:10]
-    return JSONResponse(content={"items": items, "updatedAt": datetime.now(timezone.utc).isoformat()})
+
+    # Deduplicate by Jaccard similarity
+    kept = []
+    for item in items:
+        if not any(jaccard(item["headline"], k["headline"]) > 0.6 for k in kept):
+            kept.append(item)
+        if len(kept) >= 15:
+            break
+
+    return JSONResponse(content={
+        "items": kept,
+        "updatedAt": datetime.now(timezone.utc).isoformat()
+    })
