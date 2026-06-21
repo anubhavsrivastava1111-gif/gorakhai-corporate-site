@@ -4,41 +4,73 @@ from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
 import hashlib
 import time
+import re
 
 router = APIRouter()
 
 RSS_FEEDS = [
-    # India Business & Economy
-    {"url": "https://economictimes.indiatimes.com/rssfeedsdefault.cms", "category": "india"},
-    {"url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms", "category": "markets"},
-    {"url": "https://www.livemint.com/rss/news", "category": "business"},
-    {"url": "https://www.business-standard.com/rss/home_page_top_stories.rss", "category": "business"},
-    # World News
-    {"url": "https://feeds.bbci.co.uk/news/world/rss.xml", "category": "world"},
-    {"url": "https://feeds.bbci.co.uk/news/business/rss.xml", "category": "business"},
-    {"url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", "category": "world"},
-    # AI & Tech
-    {"url": "https://techcrunch.com/feed/", "category": "ai"},
-    {"url": "https://feeds.feedburner.com/venturebeat/SZYF", "category": "ai"},
-    {"url": "https://www.wired.com/feed/category/business/latest/rss", "category": "business"},
-    # Trade & Commodities
-    {"url": "https://feeds.bbci.co.uk/news/business/economy/rss.xml", "category": "world"},
+    # ── INDIA ──────────────────────────────────────────────
+    {"url": "https://economictimes.indiatimes.com/rssfeedsdefault.cms",              "category": "india"},
+    {"url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",  "category": "markets"},
+    {"url": "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms", "category": "markets"},
+    {"url": "https://www.livemint.com/rss/news",                                     "category": "india"},
+    {"url": "https://www.livemint.com/rss/markets",                                  "category": "markets"},
+    {"url": "https://www.business-standard.com/rss/home_page_top_stories.rss",       "category": "business"},
+    {"url": "https://www.business-standard.com/rss/markets-106.rss",                 "category": "markets"},
+    {"url": "https://www.moneycontrol.com/rss/MCtopnews.xml",                        "category": "india"},
+    {"url": "https://www.moneycontrol.com/rss/marketreports.xml",                    "category": "markets"},
+    # ── WORLD & GEOPOLITICS ────────────────────────────────
+    {"url": "https://feeds.bbci.co.uk/news/world/rss.xml",                           "category": "world"},
+    {"url": "https://feeds.bbci.co.uk/news/business/rss.xml",                        "category": "business"},
+    {"url": "https://feeds.bbci.co.uk/news/business/economy/rss.xml",                "category": "world"},
+    {"url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",                "category": "world"},
+    {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",             "category": "business"},
+    {"url": "https://feeds.skynews.com/feeds/rss/world.xml",                         "category": "world"},
+    # ── TRADE, COMMODITIES & ENERGY ───────────────────────
+    {"url": "https://economictimes.indiatimes.com/markets/commodities/rssfeeds/1368296.cms", "category": "commodities"},
+    {"url": "https://www.livemint.com/rss/commodities",                               "category": "commodities"},
+    # ── AI, TECH & INNOVATION ─────────────────────────────
+    {"url": "https://techcrunch.com/feed/",                                           "category": "ai"},
+    {"url": "https://feeds.feedburner.com/venturebeat/SZYF",                         "category": "ai"},
+    {"url": "https://www.wired.com/feed/tag/artificial-intelligence/latest/rss",      "category": "ai"},
+    {"url": "https://feeds.bbci.co.uk/news/technology/rss.xml",                      "category": "ai"},
+    # ── CRYPTO ────────────────────────────────────────────
+    {"url": "https://cointelegraph.com/rss",                                          "category": "markets"},
+    {"url": "https://coindesk.com/arc/outboundfeeds/rss/",                            "category": "markets"},
 ]
 
 CATEGORY_ICONS = {
-    "india":    "🇮🇳",
-    "business": "📈",
-    "ai":       "🤖",
-    "world":    "🌐",
-    "markets":  "💹",
+    "india":       "🇮🇳",
+    "business":    "📊",
+    "ai":          "🤖",
+    "world":       "🌐",
+    "markets":     "📈",
+    "commodities": "🛢️",
 }
 
 def score_impact(title: str) -> str:
     t = title.lower()
-    if any(k in t for k in ["crash", "collapse", "war", "crisis", "ban", "sanction", "emergency", "recession", "default"]): return "critical"
-    if any(k in t for k in ["rbi", "fed", "rate", "gdp", "inflation", "budget", "merger", "ipo", "acquisition", "tariff", "trade"]): return "high"
-    if any(k in t for k in ["growth", "launch", "forecast", "quarter", "revenue", "ai", "openai", "google", "microsoft"]): return "medium"
+    if any(k in t for k in [
+        "crash", "collapse", "war", "crisis", "ban", "sanction",
+        "emergency", "recession", "default", "attack", "explosion",
+        "catastrophe", "surge", "plunge", "historic", "record high",
+        "record low", "black swan"
+    ]): return "critical"
+    if any(k in t for k in [
+        "rbi", "fed", "rate", "gdp", "inflation", "budget", "merger",
+        "ipo", "acquisition", "tariff", "trade", "opec", "crude",
+        "federal reserve", "interest rate", "nifty", "sensex",
+        "rupee", "dollar", "gold", "oil", "quarterly results"
+    ]): return "high"
+    if any(k in t for k in [
+        "growth", "launch", "forecast", "quarter", "revenue",
+        "ai", "openai", "google", "microsoft", "apple", "meta",
+        "profit", "loss", "earnings", "investment", "startup"
+    ]): return "medium"
     return "low"
+
+def clean_html(text: str) -> str:
+    return re.sub(r'<[^>]+>', '', text or '').strip()
 
 def parse_date(entry) -> str:
     try:
@@ -58,48 +90,49 @@ def jaccard(a: str, b: str) -> float:
 @router.get("/api/public/news-feed")
 async def get_news_feed():
     items = []
+
     for feed_cfg in RSS_FEEDS:
         try:
             feed = feedparser.parse(feed_cfg["url"])
-            for entry in feed.entries[:4]:
-                title = (entry.get("title") or "").strip()
-                if not title or len(title) < 10:
+            for entry in feed.entries[:3]:
+                title = clean_html(entry.get("title") or "").strip()
+                if not title or len(title) < 15:
                     continue
-                summary = (entry.get("summary") or entry.get("description") or "").strip()
-                # Strip HTML tags from summary
-                import re
-                summary = re.sub(r'<[^>]+>', '', summary)[:300]
+                summary = clean_html(
+                    entry.get("summary") or entry.get("description") or ""
+                )[:400]
                 cat = feed_cfg["category"]
                 items.append({
-                    "id": hashlib.md5(title.encode()).hexdigest()[:12],
-                    "category": cat,
-                    "headline": title,
-                    "summary": summary or title,
-                    "source": (feed.feed.get("title") or "News").strip(),
-                    "publishedAt": parse_date(entry),
-                    "impact": score_impact(title),
-                    "icon": CATEGORY_ICONS.get(cat, "📰"),
-                    "aiAnalysis": None,
+                    "id":             hashlib.md5(title.encode()).hexdigest()[:12],
+                    "category":       cat,
+                    "headline":       title,
+                    "summary":        summary or title,
+                    "source":         clean_html(feed.feed.get("title") or "News")[:60],
+                    "publishedAt":    parse_date(entry),
+                    "impact":         score_impact(title),
+                    "icon":           CATEGORY_ICONS.get(cat, "📰"),
+                    "aiAnalysis":     None,
                     "businessImpact": None,
                     "recommendedActions": [],
                     "affectedIndustries": [],
-                    "relatedNews": [],
+                    "relatedNews":    [],
                 })
         except Exception:
             continue
 
-    # Sort by date
+    # Sort newest first
     items.sort(key=lambda x: x["publishedAt"], reverse=True)
 
-    # Deduplicate by Jaccard similarity
+    # Deduplicate — keep most recent, discard if >60% word overlap
     kept = []
     for item in items:
         if not any(jaccard(item["headline"], k["headline"]) > 0.6 for k in kept):
             kept.append(item)
-        if len(kept) >= 15:
+        if len(kept) >= 20:
             break
 
     return JSONResponse(content={
-        "items": kept,
-        "updatedAt": datetime.now(timezone.utc).isoformat()
+        "items":     kept,
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
+        "count":     len(kept),
     })
