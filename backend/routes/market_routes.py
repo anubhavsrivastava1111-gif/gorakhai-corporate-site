@@ -3,6 +3,7 @@ import httpx
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
+import re
 
 router = APIRouter()
 
@@ -13,114 +14,90 @@ async def get_usd_inr() -> float:
             d = r.json()
             return float(d["rates"]["INR"])
     except Exception:
-        return 84.0  # fallback
+        return 94.0
 
-async def get_gold_price_inr(usd_inr: float) -> dict:
-    try:
-        # Gold RSS from Economic Times
-        feed = feedparser.parse("https://economictimes.indiatimes.com/markets/commodities/rss")
-        for entry in feed.entries[:10]:
-            title = entry.get("title", "").lower()
-            if "gold" in title:
-                summary = entry.get("summary", "")
-                return {"available": True, "source": "ET Markets", "headline": entry.get("title", "")}
-    except Exception:
-        pass
-
-    try:
-        # Fallback: metals-api free tier via open.er-api (XAU)
-        async with httpx.AsyncClient(timeout=5) as client:
-            r = await client.get("https://open.er-api.com/v6/latest/XAU")
-            d = r.json()
-            if d.get("rates", {}).get("INR"):
-                # XAU rate = INR per troy ounce of gold
-                # 1 troy ounce = 31.1035g
-                # Indian retail price is per 10g
-                price_per_troy_oz_inr = float(d["rates"]["INR"])
-                price_per_10g = (price_per_troy_oz_inr / 31.1035) * 10
-                # Add ~5% making charges + GST approximation for retail price
-                retail_price = price_per_10g * 1.05
-                return {
-                    "available": True,
-                    "value": f"₹{retail_price:,.0f}",
-                    "source": "Live Rate",
-                }
-    except Exception:
-        pass
-
-    return {"available": False}
-
-async def get_nifty_sensex() -> dict:
-    try:
-        feed = feedparser.parse("https://economictimes.indiatimes.com/markets/stocks/rss")
-        nifty = None
-        sensex = None
-        for entry in feed.entries[:15]:
-            title = entry.get("title", "").lower()
-            if "nifty" in title and not nifty:
-                nifty = {"headline": entry.get("title", ""), "available": True}
-            if "sensex" in title and not sensex:
-                sensex = {"headline": entry.get("title", ""), "available": True}
-            if nifty and sensex:
-                break
-        return {"nifty": nifty, "sensex": sensex}
-    except Exception:
-        return {"nifty": None, "sensex": None}
-
-@router.get("/api/public/market-feed")
-async def get_market_feed():
-    now = datetime.now(timezone.utc)
-    usd_inr = await get_usd_inr()
-
-    # Get gold
-    gold = await get_gold_price_inr(usd_inr)
-
-    # Get silver via XAG
+async def get_metals_prices(usd_inr: float) -> dict:
+    """Get gold and silver prices via CoinGecko (free, no key needed)"""
+    gold_value = "Unavailable"
     silver_value = "Unavailable"
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            r = await client.get("https://open.er-api.com/v6/latest/XAG")
+        async with httpx.AsyncClient(timeout=8) as client:
+            r = await client.get(
+                "https://api.coingecko.com/api/v3/simple/price",
+                params={
+                    "ids": "gold,silver",
+                    "vs_currencies": "usd"
+                }
+            )
             d = r.json()
-            if d.get("rates", {}).get("INR"):
-                # XAG = INR per troy ounce of silver
-                # Indian silver quoted per kg = 1000g
-                # 1 troy oz = 31.1035g → 1kg = 32.1507 troy oz
-                price_per_troy_oz_inr = float(d["rates"]["INR"])
-                price_per_kg = price_per_troy_oz_inr * 32.1507
-                silver_value = f"₹{price_per_kg:,.0f}"
+            # Gold: CoinGecko returns price per troy ounce in USD
+            # Convert to INR per 10g
+            if "gold" in d:
+                gold_usd_per_oz = float(d["gold"]["usd"])
+                gold_inr_per_oz = gold_usd_per_oz * usd_inr
+                gold_inr_per_10g = (gold_inr_per_oz / 31.1035) * 10
+                gold_value = f"₹{gold_inr_per_10g:,.0f}"
+            # Silver: convert to INR per kg
+            if "silver" in d:
+                silver_usd_per_oz = float(d["silver"]["usd"])
+                silver_inr_per_oz = silver_usd_per_oz * usd_inr
+                silver_inr_per_kg = silver_inr_per_oz * 32.1507
+                silver_value = f"₹{silver_inr_per_kg:,.0f}"
     except Exception:
         pass
 
-    # Get BTC/USD
-    btc_value = "Unavailable"
-    btc_change = ""
-    btc_positive = True
+    # Fallback: try metals-api alternative
+    if gold_value == "Unavailable":
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                r = await client.get(
+                    "https://api.metals.live/v1/spot",
+                )
+                metals = r.json()
+                for m in metals:
+                    if m.get("gold"):
+                        gold_usd = float(m["gold"])
+                        gold_inr_per_10g = (gold_usd * usd_inr / 31.1035) * 10
+                        gold_value = f"₹{gold_inr_per_10g:,.0f}"
+                    if m.get("silver"):
+                        silver_usd = float(m["silver"])
+                        silver_inr_per_kg = silver_usd * usd_inr * 32.1507
+                        silver_value = f"₹{silver_inr_per_kg:,.0f}"
+        except Exception:
+            pass
+
+    return {"gold": gold_value, "silver": silver_value}
+
+async def get_btc_price() -> dict:
     try:
         async with httpx.AsyncClient(timeout=5) as client:
             r = await client.get(
                 "https://api.coingecko.com/api/v3/simple/price",
-                params={"ids": "bitcoin", "vs_currencies": "usd", "include_24hr_change": "true"},
-                timeout=5
+                params={
+                    "ids": "bitcoin",
+                    "vs_currencies": "usd",
+                    "include_24hr_change": "true"
+                }
             )
             d = r.json()
             btc_usd = d["bitcoin"]["usd"]
             btc_24h = d["bitcoin"].get("usd_24h_change", 0)
-            btc_value = f"${btc_usd:,.0f}"
-            btc_change = f"{btc_24h:+.2f}%"
-            btc_positive = btc_24h >= 0
+            return {
+                "value": f"${btc_usd:,.0f}",
+                "change": f"{btc_24h:+.2f}%",
+                "isPositive": btc_24h >= 0,
+            }
     except Exception:
-        pass
+        return {"value": "Unavailable", "change": "", "isPositive": True}
 
-    # Get crude oil via RSS
-    crude_value = "Unavailable"
-    try:
-        feed = feedparser.parse("https://economictimes.indiatimes.com/markets/commodities/rss")
-        for entry in feed.entries[:10]:
-            if "crude" in entry.get("title", "").lower() or "oil" in entry.get("title", "").lower():
-                crude_value = entry.get("title", "Check ET Markets")
-                break
-    except Exception:
-        pass
+@router.get("/api/public/market-feed")
+async def get_market_feed():
+    now = datetime.now(timezone.utc)
+
+    # Fetch all in sequence (Railway free tier — avoid parallel timeouts)
+    usd_inr = await get_usd_inr()
+    metals  = await get_metals_prices(usd_inr)
+    btc     = await get_btc_price()
 
     items = [
         {
@@ -139,9 +116,9 @@ async def get_market_feed():
             "id": "gold",
             "symbol": "GOLD",
             "name": "Gold (10g)",
-            "value": gold.get("value", "Unavailable") if gold.get("available") else "Unavailable",
+            "value": metals["gold"],
             "change": "",
-            "changePercent": "MCX Est.",
+            "changePercent": "Spot",
             "isPositive": True,
             "icon": "🥇",
             "category": "commodities",
@@ -151,9 +128,9 @@ async def get_market_feed():
             "id": "silver",
             "symbol": "SILVER",
             "name": "Silver (kg)",
-            "value": silver_value,
+            "value": metals["silver"],
             "change": "",
-            "changePercent": "MCX Est.",
+            "changePercent": "Spot",
             "isPositive": True,
             "icon": "🥈",
             "category": "commodities",
@@ -163,10 +140,10 @@ async def get_market_feed():
             "id": "btc",
             "symbol": "BTC",
             "name": "Bitcoin",
-            "value": btc_value,
-            "change": btc_change,
-            "changePercent": btc_change,
-            "isPositive": btc_positive,
+            "value": btc["value"],
+            "change": btc["change"],
+            "changePercent": btc["change"],
+            "isPositive": btc["isPositive"],
             "icon": "₿",
             "category": "markets",
             "updatedAt": now.isoformat(),
