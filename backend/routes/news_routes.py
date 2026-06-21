@@ -9,8 +9,43 @@ import re
 router = APIRouter()
 
 RSS_FEEDS = [
-    # ── INDIA ──────────────────────────────────────────────
-    {"url": "https://economictimes.indiatimes.com/rssfeedsdefault.cms",              "category": "india"},
+    # ── INDIA NEWS ─────────────────────────────────────────
+    {"url": "https://economictimes.indiatimes.com/rssfeedsdefault.cms",                        "category": "india"},
+    {"url": "https://www.livemint.com/rss/news",                                               "category": "india"},
+    {"url": "https://www.moneycontrol.com/rss/MCtopnews.xml",                                 "category": "india"},
+    # ── BUSINESS NEWS ──────────────────────────────────────
+    {"url": "https://economictimes.indiatimes.com/industry/rssfeeds/13352306.cms",            "category": "business"},
+    {"url": "https://economictimes.indiatimes.com/small-biz/rssfeeds/15614700.cms",           "category": "business"},
+    {"url": "https://www.business-standard.com/rss/home_page_top_stories.rss",                "category": "business"},
+    {"url": "https://feeds.bbci.co.uk/news/business/rss.xml",                                 "category": "business"},
+    {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",                      "category": "business"},
+    # ── GOVERNMENT SCHEMES & POLICY ────────────────────────
+    {"url": "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3",                        "category": "business"},
+    {"url": "https://pib.gov.in/RssMain.aspx?ModId=42&Lang=1&Regid=3",                       "category": "business"},
+    {"url": "https://economictimes.indiatimes.com/news/economy/policy/rssfeeds/1695679047.cms","category": "business"},
+    {"url": "https://economictimes.indiatimes.com/news/economy/finance/rssfeeds/5765804.cms", "category": "business"},
+    # ── STOCK MARKET & NIFTY/SENSEX ────────────────────────
+    {"url": "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms",       "category": "markets"},
+    {"url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",           "category": "markets"},
+    {"url": "https://www.livemint.com/rss/markets",                                           "category": "markets"},
+    {"url": "https://www.business-standard.com/rss/markets-106.rss",                          "category": "markets"},
+    {"url": "https://www.moneycontrol.com/rss/marketreports.xml",                             "category": "markets"},
+    # ── COMMODITIES & TRADE ────────────────────────────────
+    {"url": "https://economictimes.indiatimes.com/markets/commodities/rssfeeds/1368296.cms",  "category": "commodities"},
+    {"url": "https://www.livemint.com/rss/commodities",                                       "category": "commodities"},
+    # ── WORLD & GEOPOLITICS ────────────────────────────────
+    {"url": "https://feeds.bbci.co.uk/news/world/rss.xml",                                    "category": "world"},
+    {"url": "https://feeds.bbci.co.uk/news/business/economy/rss.xml",                         "category": "world"},
+    {"url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",                         "category": "world"},
+    {"url": "https://feeds.skynews.com/feeds/rss/world.xml",                                  "category": "world"},
+    # ── AI & TECH ──────────────────────────────────────────
+    {"url": "https://techcrunch.com/feed/",                                                    "category": "ai"},
+    {"url": "https://feeds.feedburner.com/venturebeat/SZYF",                                  "category": "ai"},
+    {"url": "https://feeds.bbci.co.uk/news/technology/rss.xml",                               "category": "ai"},
+    {"url": "https://www.wired.com/feed/tag/artificial-intelligence/latest/rss",              "category": "ai"},
+    # ── CRYPTO ─────────────────────────────────────────────
+    {"url": "https://cointelegraph.com/rss",                                                   "category": "markets"},
+]
     {"url": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",  "category": "markets"},
     {"url": "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms", "category": "markets"},
     {"url": "https://www.livemint.com/rss/news",                                     "category": "india"},
@@ -54,18 +89,24 @@ def score_impact(title: str) -> str:
         "crash", "collapse", "war", "crisis", "ban", "sanction",
         "emergency", "recession", "default", "attack", "explosion",
         "catastrophe", "surge", "plunge", "historic", "record high",
-        "record low", "black swan"
+        "record low", "black swan", "market crash", "circuit breaker"
     ]): return "critical"
     if any(k in t for k in [
         "rbi", "fed", "rate", "gdp", "inflation", "budget", "merger",
         "ipo", "acquisition", "tariff", "trade", "opec", "crude",
         "federal reserve", "interest rate", "nifty", "sensex",
-        "rupee", "dollar", "gold", "oil", "quarterly results"
+        "rupee", "dollar", "gold", "oil", "quarterly results",
+        "sebi", "scheme", "policy", "government", "modi", "finance minister",
+        "pm india", "union budget", "gst", "income tax", "startup india",
+        "make in india", "digital india", "fdi", "msme", "subsidy",
+        "bull", "bear", "rally", "correction", "breakout", "support level"
     ]): return "high"
     if any(k in t for k in [
         "growth", "launch", "forecast", "quarter", "revenue",
         "ai", "openai", "google", "microsoft", "apple", "meta",
-        "profit", "loss", "earnings", "investment", "startup"
+        "profit", "loss", "earnings", "investment", "startup",
+        "shares", "stock", "market", "trading", "portfolio",
+        "mutual fund", "sip", "equity", "dividend", "bonus"
     ]): return "medium"
     return "low"
 
