@@ -19,6 +19,18 @@ export default function CareerDetail() {
   }, [job]);
 
   if (!job) return <Navigate to="/careers" replace />;
+  // Position is filled — redirect to careers with a message instead of showing the application form
+  return (
+    <div className="bg-[#050505] text-white min-h-screen flex items-center justify-center px-6">
+      <div className="max-w-lg text-center">
+        <span className="text-xs text-emerald-500 border border-emerald-900 bg-emerald-950 px-3 py-1 rounded-full font-medium">✓ Position Filled</span>
+        <h1 className="font-heading text-3xl font-bold text-white mt-6 mb-4">{job.title}</h1>
+        <p className="text-zinc-400 mb-8">This role has already been filled. We are not actively hiring at this time.</p>
+        <a href="/careers" className="text-sm text-white border border-zinc-700 px-5 py-2.5 rounded-lg hover:border-zinc-500 transition-colors">← Back to Careers</a>
+        <p className="text-zinc-600 text-sm mt-8">Want to be considered for future roles? Email us at <a href="mailto:careers@gorakhai.com" className="text-zinc-400">careers@gorakhai.com</a></p>
+      </div>
+    </div>
+  );
 
   const validate = () => {
     const e = {};
